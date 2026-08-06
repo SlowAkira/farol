@@ -77,7 +77,7 @@ model Campaign {
   adAccount AdAccount      @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
   insights  DailyInsight[]
 
-  @@index([adAccountId])
+  @@unique([adAccountId, externalId])
 }
 
 model DailyInsight {

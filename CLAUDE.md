@@ -1,5 +1,3 @@
-@AGENTS.md
-
 # Farol
 
 Painel de performance de tráfego pago. Usuários conectam contas de anúncios; o

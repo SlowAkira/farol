@@ -10,5 +10,9 @@ export default defineConfig({
   },
   datasource: {
     url: process.env["DATABASE_URL"],
+    // `npx prisma dev` sobe PGlite, que so tem o banco template1: sem apontar o
+    // shadow para a segunda instancia, o migrate usa o proprio banco de dev como
+    // shadow e o replay das migracoes morre em "type Platform already exists".
+    shadowDatabaseUrl: process.env["SHADOW_DATABASE_URL"],
   },
 });
