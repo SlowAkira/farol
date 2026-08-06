@@ -11,3 +11,89 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Platform {
+  META
+  GOOGLE
+}
+
+enum AccountStatus {
+  ACTIVE
+  PAUSED
+  DISCONNECTED
+}
+
+enum CampaignObjective {
+  CONVERSIONS
+  TRAFFIC
+  AWARENESS
+  LEADS
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+  DELETED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+
+  adAccounts AdAccount[]
+}
+
+model AdAccount {
+  id         String        @id @default(cuid())
+  userId     String
+  externalId String
+  platform   Platform
+  name       String
+  currency   String
+  timezone   String
+  status     AccountStatus @default(ACTIVE)
+  createdAt  DateTime      @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+
+  @@unique([userId, platform, externalId])
+}
+
+model Campaign {
+  id               String            @id @default(cuid())
+  adAccountId      String
+  externalId       String
+  name             String
+  objective        CampaignObjective
+  status           CampaignStatus
+  dailyBudgetCents Int?
+  createdAt        DateTime          @default(now())
+
+  adAccount AdAccount      @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+  insights  DailyInsight[]
+
+  @@index([adAccountId])
+}
+
+model DailyInsight {
+  id                   String   @id @default(cuid())
+  campaignId           String
+  date                 String
+  impressions          Int
+  clicks               Int
+  spendCents           Int
+  conversions          Int
+  conversionValueCents Int
+  reach                Int
+  ingestedAt           DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+  @@index([campaignId, date])
+}
