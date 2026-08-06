@@ -19,6 +19,23 @@ alertas automáticos de anomalia.
 - Nenhum acesso ao Prisma em componente. Queries ficam em `src/lib/db/` e são
   chamadas por Server Components ou route handlers.
 
+## Design
+
+- Tema claro e escuro, ambos suportados, com toggle acessível. Escuro é o
+  padrão. Nenhuma cor hardcoded em componente: tudo via tokens CSS do shadcn.
+- Cor de marca: roxo, usada em botões, links e elementos de navegação. Paleta
+  definida como variáveis com tons de hover, ativo e desabilitado, validados
+  para contraste AA nos dois temas.
+- Cor de acento: âmbar, reservada ao logo, ao ícone de alerta e a nada mais.
+  É a assinatura visual do Farol e não pode virar cor de botão comum.
+- Densidade espaçada: cartões grandes, números em destaque, generoso em
+  espaço em branco. Preferir legibilidade a caber mais dado por tela.
+- Hierarquia do dashboard: KPIs do período no topo, gráfico de evolução no
+  meio, tabela de campanhas embaixo.
+- Cores de estado (verde de melhora, vermelho de piora) são independentes da
+  cor de marca e nunca são o único sinal: sempre acompanhadas de seta ou
+  sinal, para funcionar em daltonismo.
+
 ## Estilo
 
 - Sem comentários óbvios; comentário só explica o porquê, nunca o quê.
