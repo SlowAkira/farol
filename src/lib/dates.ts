@@ -33,6 +33,14 @@ export function addDays(date: string, days: number): string {
   return fromEpochDay(toEpochDay(date) + days);
 }
 
+// Mesmo epoch-day de addDays, na direcao contraria: quantos dias corridos
+// separam duas datas de calendario, sem cruzar fuso nenhum.
+export function daysBetween(start: string, end: string): number {
+  assertIsoDate(start);
+  assertIsoDate(end);
+  return toEpochDay(end) - toEpochDay(start);
+}
+
 // Montado a partir de formatToParts em vez de formatar direto: a ordem dos campos
 // e o separador dependem do locale de quem roda o processo, e "06/08/2026" no
 // lugar de "2026-08-06" so apareceria na maquina errada.

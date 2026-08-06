@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, isIsoDate, todayIn } from "./dates";
+import { addDays, daysBetween, isIsoDate, todayIn } from "./dates";
 
 describe("isIsoDate", () => {
   it("aceita data real e recusa data que so parece valida", () => {
@@ -30,6 +30,29 @@ describe("addDays", () => {
 
   it("recusa data invalida em vez de deslizar em silencio", () => {
     expect(() => addDays("2026-02-30", 1)).toThrow(RangeError);
+  });
+});
+
+describe("daysBetween", () => {
+  it("conta dias corridos entre duas datas", () => {
+    expect(daysBetween("2026-08-06", "2026-08-06")).toBe(0);
+    expect(daysBetween("2026-08-06", "2026-08-07")).toBe(1);
+    expect(daysBetween("2026-07-09", "2026-08-06")).toBe(28);
+  });
+
+  it("devolve negativo quando end vem antes de start", () => {
+    expect(daysBetween("2026-08-06", "2026-08-01")).toBe(-5);
+  });
+
+  it("atravessa mes, ano e ano bissexto do mesmo jeito que addDays", () => {
+    expect(daysBetween("2026-02-28", "2026-03-01")).toBe(1);
+    expect(daysBetween("2024-02-28", "2024-03-01")).toBe(2);
+    expect(daysBetween("2025-12-31", "2026-01-01")).toBe(1);
+  });
+
+  it("derruba com data invalida em vez de devolver numero sem sentido", () => {
+    expect(() => daysBetween("2026-02-30", "2026-03-01")).toThrow(RangeError);
+    expect(() => daysBetween("2026-02-01", "2026-13-01")).toThrow(RangeError);
   });
 });
 
