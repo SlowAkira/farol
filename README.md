@@ -17,6 +17,13 @@ chamado `farol`. É o que impede o `DATABASE_URL` do `.env` de quebrar a cada
 reinício — sem as portas fixas o `prisma dev` sorteia uma porta livre toda vez.
 Para derrubar: `npm run db:stop`.
 
+`npm test` rodando o arquivo inteiro pode falhar em local com `bind message
+supplies N parameters, but prepared statement "" requires 0` quando dois
+arquivos de teste abrem conexão com o banco ao mesmo tempo: o `prisma dev` é
+`@electric-sql/pglite` atrás de um socket, não Postgres de verdade, e não
+isola direito sessões concorrentes — o CI roda contra Postgres real em
+container e não reproduz o problema.
+
 ## Sincronização
 
 Ingestão de uma conta específica, na máquina local:
