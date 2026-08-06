@@ -239,10 +239,19 @@ function generateInsights(
     );
     // O arredondamento de clicks pode empurrar a razao clicks/impressions para
     // fora da faixa, entao a faixa e reaplicada ja no inteiro.
+    //
+    // Os limites vao ordenados porque com impressions baixo o piso ultrapassa o
+    // teto (em 10 impressions, ceil(0.008*10)=1 contra floor(0.035*10)=0): nao
+    // existe inteiro dentro da faixa. Invertidos, o clamp devolveria o teto e
+    // zeraria os cliques; ordenados, o valor arredondado passa intacto. Nenhum
+    // perfil atual chega perto disso, e a ordenacao existe para que mexer nos
+    // perfis nao reintroduza a inversao em silencio.
+    const lowerClicks = Math.ceil(MIN_CTR * impressions);
+    const upperClicks = Math.floor(MAX_CTR * impressions);
     const clicks = clamp(
       Math.round(impressions * ctr),
-      Math.ceil(MIN_CTR * impressions),
-      Math.floor(MAX_CTR * impressions),
+      Math.min(lowerClicks, upperClicks),
+      Math.max(lowerClicks, upperClicks),
     );
 
     const frequency = Math.max(
