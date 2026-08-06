@@ -291,7 +291,12 @@ export async function syncAccount(
         ...written,
       };
     },
-    { timeout: 15_000 },
+    // maxWait explicito, e nao o padrao de 2s do Prisma: com o cron sincronizando
+    // tres contas ao mesmo tempo, quem chega e encontra o pool ocupado desiste
+    // antes de conseguir vaga e a conta falha por espera, nao por erro de
+    // ingestao. O `timeout` continua limitando a execucao da transacao; o
+    // maxWait limita so a espera para comeca-la.
+    { timeout: 15_000, maxWait: 15_000 },
   );
 
   return {
