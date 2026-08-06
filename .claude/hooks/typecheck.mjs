@@ -24,7 +24,11 @@ process.stdin.on("end", () => {
   } catch (err) {
     const output = `${err.stdout ?? ""}${err.stderr ?? ""}`;
     const firstLines = output.split(/\r?\n/).slice(0, 20).join("\n");
-    console.log(firstLines);
-    process.exit(1);
+    // Exit 2 e obrigatorio para o hook bloquear de verdade: so ele faz o
+    // Claude Code ler o stderr do hook. Exit 1 e "erro nao bloqueante" e so
+    // aparece pro usuario via stderr; escrever em stdout com console.log (como
+    // estava) o perdia por completo dos dois lados.
+    console.error(firstLines);
+    process.exit(2);
   }
 });
