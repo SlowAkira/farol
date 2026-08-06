@@ -95,5 +95,4 @@ model DailyInsight {
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@unique([campaignId, date])
-  @@index([campaignId, date])
 }
