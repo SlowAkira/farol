@@ -17,6 +17,13 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-active: var(--brand-active);
+  --color-brand-disabled: var(--brand-disabled);
+  --color-brand-link: var(--brand-link);
+  --color-brand-amber: var(--brand-amber);
+  --color-state-positive: var(--state-positive);
+  --color-state-negative: var(--state-negative);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -55,8 +62,28 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  /* Marca (roxo): #7C3AED sobre branco/#FFF da 5.7:1, acima do 4.5:1 (AA texto)
+     exigido pelo par preenchido botao/texto. Hover/ativo (violet-700/800) sao
+     mais escuros ainda, contraste so cresce. Mesmo par nos dois temas porque o
+     contraste do botao depende so dele mesmo, nao do fundo da pagina. */
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --brand-hover: #6d28d9;
+  --brand-active: #5b21b6;
+  /* Estado desabilitado e isento do minimo de contraste (WCAG 1.4.3), so
+     precisa comunicar "fora de uso". */
+  --brand-disabled: #ddd6fe;
+  /* Link sem fundo: precisa de mais contraste contra o fundo claro do que o
+     texto branco do botao preenchido pede. #6D28D9 sobre branco da 7.1:1. */
+  --brand-link: #6d28d9;
+  /* Reservado a logo e icone de alerta, nunca a botao/hover comum.
+     #D97706 sobre branco da 3.2:1, acima do 3:1 (AA grafico/icone grande). */
+  --brand-amber: #d97706;
+  /* Verde/vermelho de estado, independentes da marca; sempre acompanhados de
+     seta/sinal na UI, nunca so a cor. #15803D e #DC2626 sobre branco dao
+     5.0:1 e 4.8:1. */
+  --state-positive: #15803d;
+  --state-negative: #dc2626;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -74,8 +101,8 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
@@ -83,14 +110,33 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  /* Base em neutral-900 (#171717), nao neutral-950 (#0a0a0a, quase preto puro):
+     17.2:1 de contraste com --foreground, bem acima do 4.5:1 exigido, com uma
+     base que ainda se le como cinza. Superficies elevadas (card/popover/sidebar)
+     sobem um degrau junto, para neutral-800, mantendo a mesma distancia relativa
+     que tinham antes. */
+  --background: oklch(0.205 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.269 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.269 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* Mesmo par preenchido/hover/ativo do claro: o contraste do botao (5.7:1
+     e acima) nao depende do tema da pagina, so do par fundo/texto dele
+     mesmo. */
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --brand-hover: #6d28d9;
+  --brand-active: #5b21b6;
+  --brand-disabled: #4c1d95;
+  /* Link sem fundo no escuro: #C4B5FD sobre o novo --background (neutral-900)
+     da 9.7:1. */
+  --brand-link: #c4b5fd;
+  /* #FBBF24 sobre o novo --background da 10.7:1, acima do 3:1 exigido. */
+  --brand-amber: #fbbf24;
+  /* #4ADE80 e #F87171 sobre o novo --background dao 10.3:1 e 6.5:1. */
+  --state-positive: #4ade80;
+  --state-negative: #f87171;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -108,8 +154,8 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { AccountStatus } from "@/generated/prisma/enums";
+import { addDays, todayIn } from "@/lib/dates";
 import { DAYS, DEFAULT_END_DATE } from "@/lib/mock/generator";
 import {
   InvalidDateRangeError,
@@ -13,8 +14,12 @@ const ACCOUNT = "act_100000042";
 const START_DATE = "2026-04-08";
 const CAMPAIGN_COUNT = 4;
 
+// endDate fixo em DEFAULT_END_DATE: estes testes verificam o dado que o
+// gerador produz, nao o fallback dinamico do provider (isso e testado a
+// parte, no describe "MOCK_PROVIDER_END_DATE").
 function testProvider(overrides: Partial<MockProviderConfig> = {}): MockProvider {
   return new MockProvider({
+    endDate: DEFAULT_END_DATE,
     errorRate: 0,
     random: () => 0,
     sleep: () => Promise.resolve(),
@@ -282,14 +287,15 @@ describe("MOCK_PROVIDER_END_DATE", () => {
     expect(insights).toHaveLength(7 * CAMPAIGN_COUNT);
   });
 
-  it("mantem a ancora padrao quando ausente ou vazia", async () => {
+  it("reancora sozinha em ontem (UTC) quando ausente ou vazia", async () => {
     delete process.env.MOCK_PROVIDER_END_DATE;
     const provider = new MockProvider({ errorRate: 0, sleep: () => Promise.resolve() });
+    const expectedAnchor = addDays(todayIn("UTC"), -1);
 
     const lastDay = await provider.fetchInsights({
       accountExternalId: ACCOUNT,
-      since: DEFAULT_END_DATE,
-      until: DEFAULT_END_DATE,
+      since: expectedAnchor,
+      until: expectedAnchor,
     });
 
     expect(lastDay).toHaveLength(CAMPAIGN_COUNT);
