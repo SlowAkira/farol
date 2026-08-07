@@ -13,7 +13,7 @@ export default async function DashboardPage({
 
   if (!accountId) {
     return (
-      <div className="p-8">
+      <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="mt-2 text-muted-foreground">Nenhuma conta de anúncios conectada ainda.</p>
       </div>
@@ -23,7 +23,7 @@ export default async function DashboardPage({
   const account = accounts.find((candidate) => candidate.id === accountId);
 
   return (
-    <div className="space-y-2 p-8">
+    <div className="space-y-2">
       <h1 className="text-2xl font-semibold">Dashboard</h1>
       <p className="text-muted-foreground">
         Conta: {account?.name} · Período: {period.since} a {period.until}

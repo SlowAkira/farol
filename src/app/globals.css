@@ -110,11 +110,16 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  /* Base em neutral-900 (#171717), nao neutral-950 (#0a0a0a, quase preto puro):
+     17.2:1 de contraste com --foreground, bem acima do 4.5:1 exigido, com uma
+     base que ainda se le como cinza. Superficies elevadas (card/popover/sidebar)
+     sobem um degrau junto, para neutral-800, mantendo a mesma distancia relativa
+     que tinham antes. */
+  --background: oklch(0.205 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.269 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.269 0 0);
   --popover-foreground: oklch(0.985 0 0);
   /* Mesmo par preenchido/hover/ativo do claro: o contraste do botao (5.7:1
      e acima) nao depende do tema da pagina, so do par fundo/texto dele
@@ -124,11 +129,12 @@
   --brand-hover: #6d28d9;
   --brand-active: #5b21b6;
   --brand-disabled: #4c1d95;
-  /* Link sem fundo no escuro: #C4B5FD sobre o --background escuro da 10.3:1. */
+  /* Link sem fundo no escuro: #C4B5FD sobre o novo --background (neutral-900)
+     da 9.7:1. */
   --brand-link: #c4b5fd;
-  /* #FBBF24 sobre o --background escuro da 11.4:1, acima do 3:1 exigido. */
+  /* #FBBF24 sobre o novo --background da 10.7:1, acima do 3:1 exigido. */
   --brand-amber: #fbbf24;
-  /* #4ADE80 e #F87171 sobre o --background escuro dao 11.0:1 e 6.9:1. */
+  /* #4ADE80 e #F87171 sobre o novo --background dao 10.3:1 e 6.5:1. */
   --state-positive: #4ade80;
   --state-negative: #f87171;
   --secondary: oklch(0.269 0 0);

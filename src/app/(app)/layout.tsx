@@ -7,11 +7,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const accounts = await listSyncableAccounts();
 
   return (
-    <div className="flex min-h-full">
+    // Grid de 2 colunas (nao flex) para a sidebar ficar h-screen de verdade e o
+    // conteudo rolar sozinho, sem a sidebar esticar/encolher com a altura dele.
+    <div className="grid h-screen grid-cols-[14rem_1fr]">
       <Sidebar />
-      <div className="flex flex-1 flex-col">
+      <div className="flex h-screen flex-col overflow-hidden">
         <Topbar accounts={accounts} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 overflow-y-auto p-10">{children}</main>
       </div>
     </div>
   );
