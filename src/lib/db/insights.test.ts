@@ -223,9 +223,12 @@ describe("getDailySeries", () => {
       "2026-06-05",
     ]);
 
+    // hasData: false e o que separa este zero do zero de um dia que rodou e nao
+    // gastou. Sem essa marca os dois seriam indistinguiveis para quem plota.
     const diaVazio = series.find((day) => day.date === "2026-06-02");
     expect(diaVazio).toEqual({
       date: "2026-06-02",
+      hasData: false,
       impressions: 0,
       clicks: 0,
       spendCents: 0,
@@ -235,7 +238,37 @@ describe("getDailySeries", () => {
     });
 
     const diaComDado = series.find((day) => day.date === "2026-06-01");
+    expect(diaComDado?.hasData).toBe(true);
     expect(totalsOf(diaComDado!)).toEqual(sumTotals(rows.filter((row) => row.date === "2026-06-01")));
+  });
+
+  // O caso que os totais sozinhos nao contam: a campanha rodou, foi medida e o
+  // resultado do dia foi zero. Isso e dado, nao lacuna, e tem que sobreviver ao
+  // corte que o grafico faz nos dias sem insight.
+  it("marca como dado o dia cujo insight existe mas soma zero", async () => {
+    const adAccountId = await seedAccount();
+    const campaign = await seedCampaign(adAccountId, "camp_a");
+    await db.prisma.dailyInsight.create({
+      data: {
+        campaignId: campaign,
+        date: "2026-06-02",
+        impressions: 0,
+        clicks: 0,
+        spendCents: 0,
+        conversions: 0,
+        conversionValueCents: 0,
+        reach: 0,
+      },
+    });
+
+    const series = await getDailySeries(adAccountId, "2026-06-01", "2026-06-03");
+
+    expect(series.map((day) => [day.date, day.hasData])).toEqual([
+      ["2026-06-01", false],
+      ["2026-06-02", true],
+      ["2026-06-03", false],
+    ]);
+    expect(series[1].spendCents).toBe(0);
   });
 
   it("nao soma insight de outra conta no dia", async () => {

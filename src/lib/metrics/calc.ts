@@ -60,3 +60,20 @@ export function computeMetrics(totals: MetricTotals): Metrics {
     frequencyRatio: frequency(totals.impressions, totals.reach),
   };
 }
+
+// O painel trata "gasto" e "ROAS" como grandezas do mesmo tipo -- ambas viram um
+// KPI, uma serie ou um eixo -- mas uma e total somado e a outra e derivada. Esta
+// uniao e o vocabulario unico que deixa o resto do sistema falar de "uma
+// metrica" sem saber de qual dos dois lados ela veio.
+export type MetricKey = keyof Metrics | keyof MetricTotals;
+
+export type MetricValues = {
+  readonly [K in MetricKey]: number | null;
+};
+
+// Total nunca e null: veio de uma soma, e periodo sem linha nenhuma ja soma
+// zero. Quem e null e so a derivada sem denominador, e o tipo unico acomoda as
+// duas para o consumidor nao precisar distinguir.
+export function metricValues(totals: MetricTotals): MetricValues {
+  return { ...totals, ...computeMetrics(totals) };
+}
