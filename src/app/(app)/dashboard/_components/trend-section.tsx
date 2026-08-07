@@ -1,0 +1,61 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { trimToLastDataDay } from "@/lib/charts/series";
+import { getDailySeries } from "@/lib/db/insights";
+import { formatDayLabel } from "@/lib/format";
+import { metricValues } from "@/lib/metrics/calc";
+import { TrendChart, type TrendRow } from "./trend-chart";
+
+export async function TrendSection({
+  accountId,
+  currency,
+  period,
+}: {
+  accountId: string;
+  currency: string;
+  period: { since: string; until: string };
+}) {
+  const days = await getDailySeries(accountId, period.since, period.until);
+
+  // Corta o rabo de dias ainda nao ingeridos antes de virar ponto no grafico:
+  // eles voltam zerados do banco e desenhariam uma queda que nao aconteceu.
+  const { days: measured, lastDataDate } = trimToLastDataDay(days);
+
+  // As derivadas de cada dia saem daqui, no servidor, via src/lib/metrics: o
+  // componente cliente do grafico so recebe numero pronto e nunca divide.
+  const rows: TrendRow[] = measured.map((day) => {
+    const values = metricValues(day);
+
+    return {
+      date: day.date,
+      label: formatDayLabel(day.date),
+      spendCents: values.spendCents,
+      roasRatio: values.roasRatio,
+      cpaCents: values.cpaCents,
+      conversions: values.conversions,
+      ctrPercent: values.ctrPercent,
+    };
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Evolução no período</CardTitle>
+        <CardDescription>
+          Duas métricas lado a lado, cada uma na própria escala. Passe o mouse ou use as setas do
+          teclado sobre o gráfico para ler os valores de um dia.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {lastDataDate === null ? (
+          <p className="text-muted-foreground">Nenhum dia do período foi medido ainda.</p>
+        ) : (
+          <TrendChart
+            rows={rows}
+            currency={currency}
+            coverageLabel={`Dados até ${formatDayLabel(lastDataDate)}`}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+}

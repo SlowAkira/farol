@@ -24,6 +24,8 @@
   --color-brand-amber: var(--brand-amber);
   --color-state-positive: var(--state-positive);
   --color-state-negative: var(--state-negative);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -94,8 +96,20 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
+  /* Series do grafico. Sao dois, e nao cinco, de proposito: o painel mostra no
+     maximo duas metricas ao mesmo tempo, e um par validado separa melhor do que
+     uma paleta grande que ninguem conferiu. #2A78D6 e #EB6834 sobre o fundo do
+     card (--card, branco) passam nos seis checks da skill dataviz -- banda de
+     luminosidade, piso de croma, separacao sob protanopia/deuteranopia
+     (ΔE 24,7), piso de visao normal (ΔE 33,6) e contraste >= 3:1. Antes de
+     acrescentar um terceiro, rode o validador: paleta que cresce no olho e
+     exatamente o que colapsa em daltonismo. */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  /* Grade e eixo sao fio de cabelo, um passo acima do fundo do card e nunca
+     tracejados: tracejado le como projecao ou limiar, e aqui e so grade. */
+  --chart-grid: #e5e5e5;
+  --chart-axis: #d4d4d4;
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
@@ -147,8 +161,14 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
+  /* Mesmos dois azuis/laranjas, repassados para o fundo escuro do card
+     (--card, #262626) -- nao e o claro invertido nem o mesmo hex reaproveitado.
+     Validados como conjunto contra esse fundo: ΔE 26,8 sob daltonismo, 31,8 em
+     visao normal, ambos >= 3:1 de contraste. */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-grid: #3a3a3a;
+  --chart-axis: #4a4a4a;
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);

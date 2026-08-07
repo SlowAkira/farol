@@ -30,7 +30,7 @@ vi.mock("@/lib/ingestion/sync", async (importOriginal) => ({
 const { GET, POST } = await import("./route");
 
 function account(id: string): SyncableAccount {
-  return { id, name: `Conta ${id}`, platform: Platform.META };
+  return { id, name: `Conta ${id}`, platform: Platform.META, currency: "BRL" };
 }
 
 function summary(): SyncSummary {

@@ -10,6 +10,11 @@ export type Period = {
 
 export type DailyTotals = MetricTotals & {
   readonly date: string;
+  // Zero e ausencia sao coisas diferentes e os totais sozinhos nao distinguem as
+  // duas: um dia sem nenhum insight e um dia que rodou e gastou zero chegam aqui
+  // identicos. Quem plota precisa dessa diferenca -- desenhar ausencia como zero
+  // inventa uma queda a pique que nao existiu.
+  readonly hasData: boolean;
 };
 
 export type CampaignBreakdownRow = {
@@ -107,7 +112,8 @@ export async function getDailySeries(
   const daysInPeriod = daysBetween(since, until);
   return Array.from({ length: daysInPeriod + 1 }, (_, offset) => {
     const date = addDays(since, offset);
-    return { date, ...(totalsByDate.get(date) ?? ZERO_TOTALS) };
+    const totals = totalsByDate.get(date);
+    return { date, hasData: totals !== undefined, ...(totals ?? ZERO_TOTALS) };
   });
 }
 
