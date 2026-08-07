@@ -1,5 +1,6 @@
 import { Platform } from "@/generated/prisma/enums";
-import { DEFAULT_END_DATE, generateAccount } from "@/lib/mock/generator";
+import { addDays, todayIn } from "@/lib/dates";
+import { generateAccount } from "@/lib/mock/generator";
 import {
   InvalidDateRangeError,
   ProviderConfigError,
@@ -42,13 +43,22 @@ function envErrorRate(): number {
   return Number.isFinite(parsed) ? Math.min(1, Math.max(0, parsed)) : 0;
 }
 
+const FALLBACK_TIMEZONE = "UTC";
+
+// Sem a env var, a janela reancora sozinha em "ontem" (UTC) a cada chamada: uma
+// data fixa faria "ultimos N dias" caminhar para fora dos 120 dias gerados e
+// voltar vazio poucas semanas depois de qualquer valor hardcoded.
+function defaultEndDate(): string {
+  return addDays(todayIn(FALLBACK_TIMEZONE), -1);
+}
+
 // Data invalida aqui derruba na hora em vez de cair no fallback: quem setou a
-// variavel queria reancorar a janela, e servir 2026-08-05 em silencio esconderia
-// o erro ate alguem estranhar o grafico vazio.
+// variavel queria reancorar a janela, e servir uma data errada em silencio
+// esconderia o erro ate alguem estranhar o grafico vazio.
 function envEndDate(): string {
   const configured = process.env.MOCK_PROVIDER_END_DATE?.trim();
   if (!configured) {
-    return DEFAULT_END_DATE;
+    return defaultEndDate();
   }
 
   if (!isIsoDate(configured)) {
