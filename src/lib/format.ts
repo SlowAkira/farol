@@ -39,11 +39,16 @@ export function formatCurrency(cents: number, currency: string): string {
 
 // Compacto encurta o eixo e o cartao ("R$ 12,3 mil"); o valor exato continua
 // alcancavel pelo title, entao a abreviacao nunca esconde o numero.
+// minimumFractionDigits explicito, e nao herdado: em moeda o padrao vem da
+// propria moeda (BRL pede 2 casas) e o ICU do Node 20 aplica isso ao compacto,
+// devolvendo "R$ 842,0" onde o Node 24 devolve "R$ 842". Sem fixar o minimo o
+// formato do painel muda conforme a versao do runtime.
 export function formatCurrencyCompact(cents: number, currency: string): string {
   return formatter(`currencyCompact:${currency}`, {
     style: "currency",
     currency,
     notation: "compact",
+    minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   }).format(toCurrencyUnits(cents));
 }
@@ -53,7 +58,11 @@ export function formatCount(value: number): string {
 }
 
 export function formatCountCompact(value: number): string {
-  return formatter("countCompact", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+  return formatter("countCompact", {
+    notation: "compact",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 export function formatRatio(value: number, fractionDigits = 2): string {
