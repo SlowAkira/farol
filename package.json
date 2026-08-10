@@ -8,6 +8,7 @@
     "db": "prisma dev -n farol -p 51213 -P 51214 --shadow-db-port 51215",
     "db:stop": "prisma dev stop farol",
     "sync": "tsx scripts/sync.ts",
+    "shots": "tsx scripts/shots.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -32,6 +33,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.4",

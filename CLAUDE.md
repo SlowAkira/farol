@@ -46,3 +46,14 @@ alertas automáticos de anomalia.
 
 - Lógica de métricas, ingestão e regras de alerta: teste unitário obrigatório.
 - UI não tem teste unitário; um único fluxo crítico coberto por Playwright.
+- `npm run shots` fotografa landing, dashboard, campanhas e alertas nos dois
+  temas em 375px, 768px e 1440px, e grava em `.screenshots/` (fora do git).
+  Precisa do app de pé; `SHOTS_BASE_URL` aponta para outra origem.
+
+## Fluxo de trabalho
+
+- Decida sozinho quando existir um caminho padrão defensável. Só pergunte
+  quando a decisão for irreversível, custar mais de uma hora para desfazer,
+  ou envolver trade-off que só o dono do produto resolve.
+- Ao decidir sozinho, registre a decisão e o motivo no resumo final.
+- Nunca interrompa para pedir aprovação de comando de leitura.
