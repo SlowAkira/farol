@@ -1,4 +1,4 @@
-import type { CampaignObjective, CampaignStatus } from "@/generated/prisma/enums";
+import { CampaignStatus, type CampaignObjective } from "@/generated/prisma/enums";
 import { isIsoDate } from "@/lib/dates";
 import { computeMetrics, type Metrics, type MetricTotals } from "@/lib/metrics/calc";
 import { getPrisma } from "./client";
@@ -18,6 +18,33 @@ export type CampaignDetail = {
   readonly totals: MetricTotals;
   readonly metrics: Metrics;
 };
+
+export type CampaignRoster = {
+  readonly total: number;
+  readonly ativas: number;
+  readonly pausadas: number;
+};
+
+// Distingue os tres vazios que a tabela de campanhas sozinha nao consegue
+// separar: conta que nunca teve campanha, conta cujas campanhas estao todas
+// pausadas, e conta que so nao teve gasto neste periodo. Sem isto os tres viram
+// a mesma frase generica, e so o primeiro tem alguma acao possivel.
+export async function getCampaignRoster(adAccountId: string): Promise<CampaignRoster> {
+  const grouped = await getPrisma().campaign.groupBy({
+    by: ["status"],
+    where: { adAccountId },
+    _count: { _all: true },
+  });
+
+  const porStatus = new Map(grouped.map((linha) => [linha.status, linha._count._all]));
+  const total = grouped.reduce((soma, linha) => soma + linha._count._all, 0);
+
+  return {
+    total,
+    ativas: porStatus.get(CampaignStatus.ACTIVE) ?? 0,
+    pausadas: porStatus.get(CampaignStatus.PAUSED) ?? 0,
+  };
+}
 
 export async function getCampaignDetail(
   campaignId: string,

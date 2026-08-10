@@ -1,4 +1,3 @@
-import type { SyncableAccount } from "@/lib/db/accounts";
 import { addDays, isIsoDate, todayIn } from "@/lib/dates";
 
 export const PERIOD_PRESET_DAYS = [7, 14, 30, 90] as const;
@@ -46,9 +45,12 @@ export function resolvePeriod(searchParams: SearchParamsInput): Period {
   return periodForPreset(DEFAULT_PRESET_DAYS);
 }
 
+// So precisa do id, e o tipo diz isso: assim o seletor (que e client) resolve a
+// conta a partir do seu proprio view model, sem importar src/lib/db e arrastar o
+// Prisma para o bundle do navegador.
 export function resolveAccountId(
   searchParams: SearchParamsInput,
-  accounts: readonly SyncableAccount[],
+  accounts: readonly { readonly id: string }[],
 ): string | null {
   const requested = readParam(searchParams, "account");
   if (requested && accounts.some((account) => account.id === requested)) {

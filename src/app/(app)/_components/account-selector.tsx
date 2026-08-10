@@ -8,10 +8,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { SyncableAccount } from "@/lib/db/accounts";
 import { resolveAccountId, withParams } from "../_lib/search-params";
 
-export function AccountSelector({ accounts }: { accounts: SyncableAccount[] }) {
+export type AccountOption = {
+  readonly id: string;
+  readonly name: string;
+  readonly desconectada: boolean;
+};
+
+// Marca em texto, e nao em cor: "desconectada" precisa ser legivel sem depender
+// de enxergar um ponto vermelho, e o vermelho aqui colidiria com o vermelho de
+// piora dos KPIs, que quer dizer outra coisa.
+function DisconnectedTag() {
+  return <span className="ml-2 text-xs whitespace-nowrap text-muted-foreground">desconectada</span>;
+}
+
+export function AccountSelector({ accounts }: { accounts: readonly AccountOption[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = resolveAccountId(searchParams, accounts);
@@ -24,8 +36,9 @@ export function AccountSelector({ accounts }: { accounts: SyncableAccount[] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline" className="min-w-48 justify-between">
-          {selected?.name ?? "Selecionar conta"}
+        <Button type="button" variant="outline" className="min-w-48 max-w-full justify-between">
+          <span className="truncate">{selected?.name ?? "Selecionar conta"}</span>
+          {selected?.desconectada ? <DisconnectedTag /> : null}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
@@ -36,7 +49,8 @@ export function AccountSelector({ accounts }: { accounts: SyncableAccount[] }) {
               router.push(`?${withParams(searchParams, { account: account.id })}`);
             }}
           >
-            {account.name}
+            <span className="truncate">{account.name}</span>
+            {account.desconectada ? <DisconnectedTag /> : null}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

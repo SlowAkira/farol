@@ -95,17 +95,24 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Anel de foco escuro no tema claro (neutral-500). O neutral-400 que estava
+     aqui dava 2,6:1 sobre branco, abaixo do 3:1 que a WCAG 1.4.11 exige de
+     indicador de foco -- o anel existia e quase nao aparecia. */
+  --ring: oklch(0.556 0 0);
   /* Series do grafico. Sao dois, e nao cinco, de proposito: o painel mostra no
      maximo duas metricas ao mesmo tempo, e um par validado separa melhor do que
-     uma paleta grande que ninguem conferiu. #2A78D6 e #EB6834 sobre o fundo do
-     card (--card, branco) passam nos seis checks da skill dataviz -- banda de
-     luminosidade, piso de croma, separacao sob protanopia/deuteranopia
-     (ΔE 24,7), piso de visao normal (ΔE 33,6) e contraste >= 3:1. Antes de
-     acrescentar um terceiro, rode o validador: paleta que cresce no olho e
-     exatamente o que colapsa em daltonismo. */
+     uma paleta grande que ninguem conferiu. Os numeros abaixo sao os que
+     src/lib/color/accessibility.test.ts mede a cada rodada de CI, na cor
+     simulada e nao so na nominal: contraste contra o card >= 3:1 em visao
+     normal, protanopia e deuteranopia (pior caso 4,1:1 no azul e 3,5:1 no
+     laranja) e separacao entre as duas series >= 20 de ΔE (medido: 100 no pior
+     caso). O laranja saiu de #EB6834 para #D45A20 porque o anterior caia para
+     2,8:1 quando simulado em deuteranopia -- passava no papel e sumia na tela
+     de quem nao separa vermelho de verde. Antes de acrescentar um terceiro,
+     rode o teste: paleta que cresce no olho e exatamente o que colapsa em
+     daltonismo. */
   --chart-1: #2a78d6;
-  --chart-2: #eb6834;
+  --chart-2: #d45a20;
   /* Grade e eixo sao fio de cabelo, um passo acima do fundo do card e nunca
      tracejados: tracejado le como projecao ou limiar, e aqui e so grade. */
   --chart-grid: #e5e5e5;
@@ -120,7 +127,7 @@
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 .dark {
@@ -160,13 +167,16 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Espelho do claro: no escuro o anel de foco precisa ser mais claro que o
+     fundo, nao mais escuro (neutral-400 sobre neutral-900 da 6,9:1). */
+  --ring: oklch(0.708 0 0);
   /* Mesmos dois azuis/laranjas, repassados para o fundo escuro do card
      (--card, #262626) -- nao e o claro invertido nem o mesmo hex reaproveitado.
-     Validados como conjunto contra esse fundo: ΔE 26,8 sob daltonismo, 31,8 em
-     visao normal, ambos >= 3:1 de contraste. */
+     Validados como conjunto contra esse fundo pelo mesmo teste do tema claro:
+     pior caso 4,0:1 no azul e 4,4:1 no laranja, ΔE de 97 entre as series. O
+     laranja saiu de #D95926 porque caia para 3,0:1 sob protanopia. */
   --chart-1: #3987e5;
-  --chart-2: #d95926;
+  --chart-2: #ef7a37;
   --chart-grid: #3a3a3a;
   --chart-axis: #4a4a4a;
   --chart-3: oklch(0.439 0 0);
@@ -179,7 +189,7 @@
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 @layer base {

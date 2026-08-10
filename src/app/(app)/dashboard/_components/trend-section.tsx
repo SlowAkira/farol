@@ -1,3 +1,5 @@
+import { CalendarOff } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trimToLastDataDay } from "@/lib/charts/series";
 import { getDailySeries } from "@/lib/db/insights";
@@ -47,7 +49,14 @@ export async function TrendSection({
       </CardHeader>
       <CardContent>
         {lastDataDate === null ? (
-          <p className="text-muted-foreground">Nenhum dia do período foi medido ainda.</p>
+          // Nenhum dia medido nao e o mesmo que dias medidos com valor zero: o
+          // grafico de zeros desenharia uma reta no chao, que se le como
+          // resultado, e nao como ausencia de ingestao.
+          <EmptyState
+            icon={CalendarOff}
+            titulo="Nenhum dia medido neste período"
+            descricao={`Ainda não há métrica ingerida entre ${period.since} e ${period.until}. A próxima sincronização preenche os dias que já fecharam.`}
+          />
         ) : (
           <TrendChart
             rows={rows}
