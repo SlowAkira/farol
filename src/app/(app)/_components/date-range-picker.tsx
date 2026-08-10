@@ -39,7 +39,10 @@ export function DateRangePicker() {
   });
 
   return (
-    <div className="flex items-center gap-1">
+    // Envolve em vez de estourar: em 375px os presets cabem numa linha e o botao
+    // de periodo personalizado, que carrega duas datas por extenso, desce para a
+    // seguinte.
+    <div className="flex flex-wrap items-center gap-1">
       {PERIOD_PRESET_DAYS.map((days) => (
         <Button
           key={days}
