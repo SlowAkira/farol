@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MetricValue } from "@/components/metric-value";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OBJECTIVE_LABEL, STATUS_LABEL } from "@/lib/campaigns/labels";
 import { getCampaignDetail } from "@/lib/db/campaigns";
@@ -42,11 +43,11 @@ export default async function CampaignDetailPage({
       <header className="space-y-2">
         <Link
           href={`/dashboard?since=${period.since}&until=${period.until}`}
-          className="text-sm text-brand-link underline-offset-4 hover:underline"
+          className="transition-interactive text-body text-brand-link underline-offset-4 hover:underline"
         >
           ← Voltar ao dashboard
         </Link>
-        <h1 className="text-2xl font-semibold">{campaign.name}</h1>
+        <h1 className="text-section font-semibold">{campaign.name}</h1>
         <p className="text-muted-foreground">
           {campaign.account.name} · {OBJECTIVE_LABEL[campaign.objective]} ·{" "}
           {STATUS_LABEL[campaign.status]} · {period.since} a {period.until}
@@ -66,14 +67,18 @@ export default async function CampaignDetailPage({
           return (
             <Card key={definition.key} className="gap-0 py-6">
               <CardHeader className="px-6">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-body font-medium text-muted-foreground">
                   {definition.label}
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-6">
-                <p className="text-3xl font-semibold tracking-tight" title={formatted.title}>
-                  {formatted.display}
-                </p>
+                <MetricValue
+                  value={values[definition.key]}
+                  unit={definition.unit}
+                  currency={campaign.account.currency}
+                  display={formatted.display}
+                  title={formatted.title}
+                />
               </CardContent>
             </Card>
           );

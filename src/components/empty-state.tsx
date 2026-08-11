@@ -2,14 +2,17 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-// "Alerta" nao e so uma cor mais forte: e o unico tom que usa o ambar, que o
-// CLAUDE.md reserva a logo e ao icone de alerta. Vazio comum (periodo sem dado,
-// conta sem campanha) e informacao, nao problema, e fica em cinza.
-export type EmptyStateTone = "neutro" | "alerta";
+// Tres tons, e a diferenca entre eles e o que aconteceu, nao a intensidade da
+// cor. Vazio comum (periodo sem dado, conta sem campanha) e informacao, nao
+// problema, e fica em cinza. "Alerta" e degradacao: o painel funciona, mas com
+// menos dado do que deveria. "Critico" e falha: o bloco nao carregou. Ambar e
+// vermelho sao reservados a esses dois e a mais nada.
+export type EmptyStateTone = "neutro" | "alerta" | "critico";
 
 const TONE_CLASS = {
   neutro: { circulo: "bg-muted", icone: "text-muted-foreground" },
-  alerta: { circulo: "bg-brand-amber/10", icone: "text-brand-amber" },
+  alerta: { circulo: "bg-alert-warning/10", icone: "text-alert-warning" },
+  critico: { circulo: "bg-alert-critical/10", icone: "text-alert-critical" },
 } as const satisfies Record<EmptyStateTone, { circulo: string; icone: string }>;
 
 export function EmptyState({
@@ -42,7 +45,7 @@ export function EmptyState({
         <p className="font-medium text-foreground">{titulo}</p>
         {/* Largura de leitura, nao largura do cartao: descricao esticada por uma
             tela larga vira uma linha unica dificil de varrer. */}
-        <p className="max-w-prose text-sm text-muted-foreground">{descricao}</p>
+        <p className="max-w-prose text-body text-muted-foreground">{descricao}</p>
       </div>
       {acao}
     </div>

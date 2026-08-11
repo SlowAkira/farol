@@ -4,11 +4,36 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Escala tipografica: seis tamanhos, e nenhum setimo. Fica em `@theme` e nao em
+   `:root` porque nao e cor -- e porque e daqui que o Tailwind gera as
+   utilitarias `text-label`, `text-metric` e companhia. `--text-label` e
+   `--text-body` batem com o `text-xs`/`text-sm` que os primitivos do shadcn
+   usam por dentro, entao a escala nova nao briga com eles. */
+@theme {
+  --text-label: 0.75rem;
+  --text-label--line-height: 1rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.75rem;
+  --text-section: 1.5rem;
+  --text-section--line-height: 2rem;
+  --text-metric: 1.875rem;
+  --text-metric--line-height: 2.25rem;
+  --text-display: 2.25rem;
+  --text-display--line-height: 2.5rem;
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-surface-base: var(--surface-base);
+  --color-surface-card: var(--surface-card);
+  --color-surface-raised: var(--surface-raised);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -21,14 +46,12 @@
   --color-brand-active: var(--brand-active);
   --color-brand-disabled: var(--brand-disabled);
   --color-brand-link: var(--brand-link);
-  --color-brand-amber: var(--brand-amber);
+  --color-alert-warning: var(--alert-warning);
+  --color-alert-critical: var(--alert-critical);
   --color-state-positive: var(--state-positive);
   --color-state-negative: var(--state-negative);
   --color-chart-grid: var(--chart-grid);
   --color-chart-axis: var(--chart-axis);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
@@ -58,138 +81,154 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* Marca (roxo): #7C3AED sobre branco/#FFF da 5.7:1, acima do 4.5:1 (AA texto)
-     exigido pelo par preenchido botao/texto. Hover/ativo (violet-700/800) sao
-     mais escuros ainda, contraste so cresce. Mesmo par nos dois temas porque o
+  /* Movimento: tres duracoes dentro da faixa de 150ms a 300ms, mais a da
+     contagem de KPI. Nao sao cor, entao o audit de paridade os ignora e eles
+     ficam declarados so aqui, como o --radius. */
+  --motion-fast: 150ms;
+  --motion-base: 220ms;
+  --motion-slow: 300ms;
+  --motion-count: 600ms;
+
+  /* Os tres niveis de superficie. A elevacao e uma camada mais clara, nao uma
+     sombra: no claro ela caminha para o branco, no escuro para longe do preto.
+     `--background`/`--card`/`--popover` sao os apelidos que o shadcn espera --
+     apontar para os tres niveis em vez de repetir o hex e o que garante que
+     "cartao elevado" seja um degrau e nao tres valores parecidos. */
+  --surface-base: #f4f4f6;
+  --surface-card: #fafafa;
+  --surface-raised: #ffffff;
+  --background: var(--surface-base);
+  --card: var(--surface-card);
+  --popover: var(--surface-raised);
+  --foreground: #16161a;
+  --card-foreground: #16161a;
+  --popover-foreground: #16161a;
+  /* Marca (violeta dessaturado): so aparece onde ha interacao -- botao, link,
+     navegacao ativa e anel de foco. #5B4FA8 com texto branco da 6,7:1, acima do
+     4,5:1 (AA texto) que o par preenchido exige. Hover/ativo sao mais escuros,
+     entao o contraste do botao so cresce. Mesmo par nos dois temas porque o
      contraste do botao depende so dele mesmo, nao do fundo da pagina. */
-  --primary: #7c3aed;
+  --primary: #5b4fa8;
   --primary-foreground: #ffffff;
-  --brand-hover: #6d28d9;
-  --brand-active: #5b21b6;
+  --brand-hover: #4e4394;
+  --brand-active: #413780;
   /* Estado desabilitado e isento do minimo de contraste (WCAG 1.4.3), so
      precisa comunicar "fora de uso". */
-  --brand-disabled: #ddd6fe;
-  /* Link sem fundo: precisa de mais contraste contra o fundo claro do que o
-     texto branco do botao preenchido pede. #6D28D9 sobre branco da 7.1:1. */
-  --brand-link: #6d28d9;
-  /* Reservado a logo e icone de alerta, nunca a botao/hover comum.
-     #D97706 sobre branco da 3.2:1, acima do 3:1 (AA grafico/icone grande). */
-  --brand-amber: #d97706;
-  /* Verde/vermelho de estado, independentes da marca; sempre acompanhados de
-     seta/sinal na UI, nunca so a cor. #15803D e #DC2626 sobre branco dao
-     5.0:1 e 4.8:1. */
+  --brand-disabled: #dad7ec;
+  /* Link sem fundo: precisa de mais contraste contra a superficie do que o texto
+     branco do botao preenchido pede. #4E4394 sobre o cartao da 7,8:1, e 6,4:1
+     sobre o `bg-primary/10` da navegacao ativa. */
+  --brand-link: #4e4394;
+  /* Alerta, e nada alem de alerta: ambar para degradacao, vermelho para falha.
+     Os dois sao medidos sobre o disco `/10` em que o icone e realmente
+     desenhado, e nao sobre o cartao puro -- o ambar anterior (#D97706) dava
+     3,05:1 contra o cartao e caia para 2,75:1 contra o proprio disco, abaixo do
+     3:1 da WCAG 1.4.11. Passos deliberadamente diferentes dos de --state-*: um
+     alerta nunca se disfarca de variacao de metrica. */
+  --alert-warning: #c2620a;
+  --alert-critical: #b91c1c;
+  /* Verde/vermelho de estado, independentes da marca e do alerta; sempre
+     acompanhados de seta/sinal na UI, nunca so a cor. #15803D e #DC2626 sobre o
+     cartao dao 4,8:1 e 4,6:1. */
   --state-positive: #15803d;
   --state-negative: #dc2626;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  /* Anel de foco escuro no tema claro (neutral-500). O neutral-400 que estava
-     aqui dava 2,6:1 sobre branco, abaixo do 3:1 que a WCAG 1.4.11 exige de
-     indicador de foco -- o anel existia e quase nao aparecia. */
-  --ring: oklch(0.556 0 0);
-  /* Series do grafico. Sao dois, e nao cinco, de proposito: o painel mostra no
-     maximo duas metricas ao mesmo tempo, e um par validado separa melhor do que
-     uma paleta grande que ninguem conferiu. Os numeros abaixo sao os que
-     src/lib/color/accessibility.test.ts mede a cada rodada de CI, na cor
-     simulada e nao so na nominal: contraste contra o card >= 3:1 em visao
-     normal, protanopia e deuteranopia (pior caso 4,1:1 no azul e 3,5:1 no
-     laranja) e separacao entre as duas series >= 20 de ΔE (medido: 100 no pior
-     caso). O laranja saiu de #EB6834 para #D45A20 porque o anterior caia para
-     2,8:1 quando simulado em deuteranopia -- passava no papel e sumia na tela
-     de quem nao separa vermelho de verde. Antes de acrescentar um terceiro,
-     rode o teste: paleta que cresce no olho e exatamente o que colapsa em
-     daltonismo. */
+  --secondary: #ededf0;
+  --secondary-foreground: #16161a;
+  --muted: #ededf0;
+  --muted-foreground: #5f5f6b;
+  --accent: #ededf0;
+  --accent-foreground: #16161a;
+  --destructive: #dc2626;
+  --border: #e4e4e8;
+  --input: #dcdce2;
+  /* Anel de foco na cor da marca: foco e estado interativo, e a marca e a cor de
+     estado interativo. 6,1:1 sobre o fundo da pagina, acima do 3:1 que a WCAG
+     1.4.11 exige de indicador de foco. */
+  --ring: #5b4fa8;
+  /* Series do grafico. Sao duas, e nao oito, de proposito: o painel mostra no
+     maximo duas metricas ao mesmo tempo. Sao os slots 1 (azul) e 2 (laranja) da
+     ordem fixa da skill dataviz, validados contra a superficie real por
+     `validate_palette.js` e depois pelo portao mais estrito de
+     src/lib/color/accessibility.test.ts, que mede tambem a cor simulada:
+     contraste contra o cartao >= 3:1 em visao normal, protanopia e
+     deuteranopia, e separacao entre as series >= 20 de ΔE. O laranja aqui e o
+     slot 2 re-degrauzado (o passo documentado, #EB6834, cai para 2,73:1 sob
+     deuteranopia sobre esta superficie clara) -- re-degrauzar segurando a matiz
+     e o procedimento "snap-to-passing" da propria skill. Antes de acrescentar um
+     terceiro, rode o teste: paleta que cresce no olho e exatamente o que colapsa
+     em daltonismo. */
   --chart-1: #2a78d6;
   --chart-2: #d45a20;
   /* Grade e eixo sao fio de cabelo, um passo acima do fundo do card e nunca
      tracejados: tracejado le como projecao ou limiar, e aqui e so grade. */
-  --chart-grid: #e5e5e5;
-  --chart-axis: #d4d4d4;
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --chart-grid: #e6e6ea;
+  --chart-axis: #d4d4dc;
+  --sidebar: var(--surface-base);
+  --sidebar-foreground: #16161a;
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-accent: #ededf0;
+  --sidebar-accent-foreground: #16161a;
+  --sidebar-border: #e4e4e8;
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
-  /* Base em neutral-900 (#171717), nao neutral-950 (#0a0a0a, quase preto puro):
-     17.2:1 de contraste com --foreground, bem acima do 4.5:1 exigido, com uma
-     base que ainda se le como cinza. Superficies elevadas (card/popover/sidebar)
-     sobem um degrau junto, para neutral-800, mantendo a mesma distancia relativa
-     que tinham antes. */
-  --background: oklch(0.205 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.269 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.269 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  /* Mesmo par preenchido/hover/ativo do claro: o contraste do botao (5.7:1
-     e acima) nao depende do tema da pagina, so do par fundo/texto dele
-     mesmo. */
-  --primary: #7c3aed;
+  /* Base quase neutra, com um traco minimo de azul-violeta para nao ler como
+     cinza morto. Os tres niveis sobem em degraus parelhos (#0E0E11 -> #16161A ->
+     #1E1E24), que e o que substitui a sombra: o cartao aparece por ser mais
+     claro que a pagina, nao por projetar. */
+  --surface-base: #0e0e11;
+  --surface-card: #16161a;
+  --surface-raised: #1e1e24;
+  --background: var(--surface-base);
+  --card: var(--surface-card);
+  --popover: var(--surface-raised);
+  --foreground: #fafafa;
+  --card-foreground: #fafafa;
+  --popover-foreground: #fafafa;
+  /* Mesmo par preenchido/hover/ativo do claro: o contraste do botao (6,7:1 e
+     acima) nao depende do tema da pagina, so do par fundo/texto dele mesmo. */
+  --primary: #5b4fa8;
   --primary-foreground: #ffffff;
-  --brand-hover: #6d28d9;
-  --brand-active: #5b21b6;
-  --brand-disabled: #4c1d95;
-  /* Link sem fundo no escuro: #C4B5FD sobre o novo --background (neutral-900)
-     da 9.7:1. */
-  --brand-link: #c4b5fd;
-  /* #FBBF24 sobre o novo --background da 10.7:1, acima do 3:1 exigido. */
-  --brand-amber: #fbbf24;
-  /* #4ADE80 e #F87171 sobre o novo --background dao 10.3:1 e 6.5:1. */
+  --brand-hover: #4e4394;
+  --brand-active: #413780;
+  --brand-disabled: #332c63;
+  /* Link sem fundo no escuro: #B3AAE6 sobre o cartao da 8,4:1. */
+  --brand-link: #b3aae6;
+  /* Sobre o cartao escuro, medidos no disco `/10`: 8,9:1 e 4,4:1. */
+  --alert-warning: #fbbf24;
+  --alert-critical: #ef4444;
   --state-positive: #4ade80;
   --state-negative: #f87171;
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  /* Espelho do claro: no escuro o anel de foco precisa ser mais claro que o
-     fundo, nao mais escuro (neutral-400 sobre neutral-900 da 6,9:1). */
-  --ring: oklch(0.708 0 0);
-  /* Mesmos dois azuis/laranjas, repassados para o fundo escuro do card
-     (--card, #262626) -- nao e o claro invertido nem o mesmo hex reaproveitado.
-     Validados como conjunto contra esse fundo pelo mesmo teste do tema claro:
-     pior caso 4,0:1 no azul e 4,4:1 no laranja, ΔE de 97 entre as series. O
-     laranja saiu de #D95926 porque caia para 3,0:1 sob protanopia. */
+  --secondary: #1e1e24;
+  --secondary-foreground: #fafafa;
+  --muted: #1e1e24;
+  --muted-foreground: #9e9eac;
+  --accent: #24242b;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --border: #26262e;
+  --input: #2e2e38;
+  /* Espelho do claro: no escuro o anel precisa ser um violeta mais claro que a
+     superficie, nao mais escuro (5,9:1 sobre o fundo da pagina). */
+  --ring: #8f84d9;
+  /* Os mesmos dois slots, re-degrauzados para o cartao escuro novo -- nao e o
+     claro invertido nem o mesmo hex reaproveitado. Com a base bem mais escura
+     que a anterior, o slot 2 volta a caber no passo documentado da skill
+     (#D95926): pior caso 3,5:1 sob protanopia, com ΔE de 97 entre as series. */
   --chart-1: #3987e5;
-  --chart-2: #ef7a37;
-  --chart-grid: #3a3a3a;
-  --chart-axis: #4a4a4a;
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --chart-2: #d95926;
+  --chart-grid: #26262e;
+  --chart-axis: #33333d;
+  --sidebar: var(--surface-base);
+  --sidebar-foreground: #fafafa;
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: #24242b;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #26262e;
+  --sidebar-ring: var(--ring);
 }
 
 @layer base {
@@ -198,5 +237,80 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Transicao unica de hover/foco, para cada elemento interativo nao escolher a
+     sua propria duracao. */
+  .transition-interactive {
+    transition-property: color, background-color, border-color, outline-color,
+      text-decoration-color, fill, stroke, opacity, box-shadow;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--ease-soft);
+  }
+}
+
+@layer components {
+  /* Entrada de bloco: 8px de deslocamento mais opacidade, disparada uma unica
+     vez pelo IntersectionObserver. O estado escondido depende do atributo
+     `data-reveal`, que so o componente cliente escreve depois de montar -- sem
+     JS, ou com movimento reduzido, o atributo nunca aparece e o conteudo nasce
+     visivel. Animacao nao pode ser o que torna o conteudo legivel. */
+  [data-reveal] {
+    transition-property: opacity, transform;
+    transition-duration: var(--motion-base);
+    transition-timing-function: var(--ease-soft);
+  }
+
+  [data-reveal="pendente"] {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  [data-reveal="visivel"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Shimmer do esqueleto: um brilho que atravessa a peca, mais discreto que o
+     pulso de opacidade inteira que estava aqui antes. */
+  .shimmer-skeleton {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--foreground) 8%, transparent),
+      transparent
+    );
+    animation: shimmer-skeleton 1.6s var(--ease-soft) infinite;
+  }
+}
+
+@keyframes shimmer-skeleton {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Rede de seguranca para tudo que e CSS. O que e JS -- a contagem dos KPIs, o
+   IntersectionObserver da entrada, o desenho do grafico -- e barrado pelo hook
+   `useReducedMotion`, porque media query nao para script. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

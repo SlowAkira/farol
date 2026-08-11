@@ -67,7 +67,7 @@ function SortableHead({
         href={sortHref(params, proxima)}
         aria-label={`Ordenar por ${label}, ${proxima.direction === "asc" ? "crescente" : "decrescente"}`}
         className={cn(
-          "inline-flex items-center gap-1 rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+          "transition-interactive inline-flex items-center gap-1 rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
           ativa ? "text-foreground" : "text-muted-foreground",
         )}
       >
@@ -179,7 +179,7 @@ export async function CampaignsTable({
                   <TableCell className={cn(NAME_CELL, "min-w-40 font-medium whitespace-normal")}>
                     <Link
                       href={`/campaigns/${campaign.campaignId}?${detailQuery}`}
-                      className="text-brand-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                      className="transition-interactive text-brand-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                     >
                       {campaign.name}
                     </Link>

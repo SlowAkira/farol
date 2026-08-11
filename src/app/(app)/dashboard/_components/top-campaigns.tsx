@@ -92,7 +92,7 @@ export async function TopCampaigns({
                     <TableCell className="min-w-40 font-medium whitespace-normal">
                       <Link
                         href={`/campaigns/${campaign.campaignId}?${detailQuery}`}
-                        className="text-brand-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        className="transition-interactive text-brand-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
                         {campaign.name}
                       </Link>
@@ -100,7 +100,7 @@ export async function TopCampaigns({
                         // Borda em vez de fundo preenchido: `bg-muted` com
                         // `text-muted-foreground` da 4,3:1 no tema claro, abaixo
                         // de AA. Sobre o cartao o mesmo texto da 4,7:1.
-                        <span className="ml-2 rounded-full border border-border px-2 py-0.5 align-middle text-xs whitespace-nowrap text-muted-foreground">
+                        <span className="ml-2 rounded-full border border-border px-2 py-0.5 align-middle text-label whitespace-nowrap text-muted-foreground">
                           Pausada
                         </span>
                       ) : null}
