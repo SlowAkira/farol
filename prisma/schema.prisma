@@ -8,6 +8,9 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+// Sem `url` nem `directUrl` aqui de proposito: o Prisma 7 recusa os dois no
+// schema (P1012, "no longer supported in schema files") e manda as URLs para o
+// prisma.config.ts, que e onde a pooled e a direta se separam.
 datasource db {
   provider = "postgresql"
 }

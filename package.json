@@ -9,7 +9,7 @@
     "db:stop": "prisma dev stop farol",
     "sync": "tsx scripts/sync.ts",
     "shots": "tsx scripts/shots.ts",
-    "build": "next build",
+    "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
