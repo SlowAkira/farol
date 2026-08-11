@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { isGoogleAuthConfigured } from "@/lib/auth/env";
+import { signInDemo, signInGoogle } from "./actions";
 
 export default function MarketingPage() {
   return (
@@ -12,9 +13,20 @@ export default function MarketingPage() {
         Conecte suas contas de anúncios e acompanhe evolução, comparação entre
         períodos e alertas automáticos de anomalia.
       </p>
-      <Button asChild size="lg">
-        <Link href="/dashboard">Ver modo demo</Link>
-      </Button>
+      <div className="flex flex-col items-center gap-3">
+        <form action={signInDemo}>
+          <Button type="submit" size="lg">
+            Ver modo demo
+          </Button>
+        </form>
+        {isGoogleAuthConfigured() && (
+          <form action={signInGoogle}>
+            <Button type="submit" variant="outline" size="sm">
+              Entrar com Google
+            </Button>
+          </form>
+        )}
+      </div>
     </main>
   );
 }
