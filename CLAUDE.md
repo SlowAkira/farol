@@ -13,7 +13,11 @@ alertas automáticos de anomalia.
   `src/lib/metrics/`. Componentes React nunca dividem um número por outro.
 - Valores monetários são inteiros em centavos. Nunca float.
 - Datas de métricas são strings `YYYY-MM-DD` no fuso da conta de anúncios,
-  nunca `Date` com hora.
+  nunca `Date` com hora. O ISO é formato de transporte: vale na URL, no banco e
+  entre funções. Data que aparece para uma pessoa passa por `formatDay` /
+  `formatPeriod` de `src/lib/format.ts` e sai legível ("30 jul a 5 ago"). Eixo
+  de gráfico e coluna de tabela seguem em `formatDayLabel` (`30/07`), que é
+  curto e de largura constante.
 - Server Components por padrão. `"use client"` só com interatividade real, e o
   componente cliente é folha da árvore, não raiz.
 - Nenhum acesso ao Prisma em componente. Queries ficam em `src/lib/db/` e são

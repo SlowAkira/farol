@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatPeriod } from "@/lib/format";
 import {
   PERIOD_PRESET_DAYS,
   periodAnchor,
@@ -72,7 +73,7 @@ export function DateRangePicker({ accounts }: { accounts: readonly AccountOption
             size="sm"
           >
             {activePresetDays === undefined
-              ? `${period.since} a ${period.until}`
+              ? formatPeriod(period.since, period.until)
               : "Personalizado"}
           </Button>
         </PopoverTrigger>

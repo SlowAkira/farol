@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OBJECTIVE_LABEL, STATUS_LABEL } from "@/lib/campaigns/labels";
 import { getCampaignDetail } from "@/lib/db/campaigns";
 import { getCampaignLastDataDate } from "@/lib/db/insights";
-import { formatMetric } from "@/lib/format";
+import { formatMetric, formatPeriod } from "@/lib/format";
 import { metricUnavailability } from "@/lib/metrics/availability";
 import { metricValues } from "@/lib/metrics/calc";
 import { DASHBOARD_METRICS } from "@/lib/metrics/catalog";
@@ -50,7 +50,7 @@ export default async function CampaignDetailPage({
         <h1 className="text-section font-semibold">{campaign.name}</h1>
         <p className="text-muted-foreground">
           {campaign.account.name} · {OBJECTIVE_LABEL[campaign.objective]} ·{" "}
-          {STATUS_LABEL[campaign.status]} · {period.since} a {period.until}
+          {STATUS_LABEL[campaign.status]} · {formatPeriod(period.since, period.until)}
           {budget ? <> · Orçamento diário {budget.display}</> : null}
         </p>
       </header>

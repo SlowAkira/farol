@@ -4,6 +4,7 @@ import { BlockBoundary } from "@/components/block-boundary";
 import { EmptyState } from "@/components/empty-state";
 import { Reveal } from "@/components/reveal";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatPeriod } from "@/lib/format";
 import { isDisconnected, listDashboardAccounts } from "@/lib/db/accounts";
 import { getCampaignRoster } from "@/lib/db/campaigns";
 import { getAccountLastDataDate } from "@/lib/db/insights";
@@ -81,7 +82,7 @@ export default async function DashboardPage({
     throw new Error(`Conta ${accountId} passou pela resolucao mas sumiu da lista.`);
   }
 
-  const periodoLabel = `${account.name} · ${period.since} a ${period.until}`;
+  const periodoLabel = `${account.name} · ${formatPeriod(period.since, period.until)}`;
 
   if (isDisconnected(account)) {
     return (

@@ -4,11 +4,13 @@ import {
   formatCountCompact,
   formatCurrency,
   formatCurrencyCompact,
+  formatDay,
   formatDayLabel,
   formatDelta,
   formatDeltaPercent,
   formatMetric,
   formatPercent,
+  formatPeriod,
   formatRatio,
 } from "./format";
 
@@ -138,5 +140,38 @@ describe("formatDayLabel", () => {
   it("encurta a data ISO para dia e mes, sem passar por Date", () => {
     expect(formatDayLabel("2026-08-06")).toBe("06/08");
     expect(formatDayLabel("2026-01-31")).toBe("31/01");
+  });
+});
+
+describe("formatDay", () => {
+  it("escreve o mes por extenso curto, sem zero a esquerda no dia", () => {
+    expect(formatDay("2026-08-05")).toBe("5 ago");
+    expect(formatDay("2026-01-31")).toBe("31 jan");
+    expect(formatDay("2026-12-01")).toBe("1 dez");
+  });
+
+  // Mes fora de 1..12 sairia como `undefined` no nome, que e pior do que o ISO.
+  it("devolve a entrada quando ela nao e uma data", () => {
+    expect(formatDay("2026-13-01")).toBe("2026-13-01");
+    expect(formatDay("ontem")).toBe("ontem");
+  });
+});
+
+describe("formatPeriod", () => {
+  it("junta as duas pontas dentro do mesmo ano", () => {
+    expect(formatPeriod("2026-07-30", "2026-08-05")).toBe("30 jul a 5 ago");
+  });
+
+  // Periodo de um dia so nao vira "5 ago a 5 ago".
+  it("colapsa quando comeca e termina no mesmo dia", () => {
+    expect(formatPeriod("2026-08-05", "2026-08-05")).toBe("5 ago");
+  });
+
+  it("mostra o ano quando o periodo cruza a virada", () => {
+    expect(formatPeriod("2025-12-30", "2026-01-02")).toBe("30 dez 2025 a 2 jan 2026");
+  });
+
+  it("devolve o ISO quando uma das pontas nao e data", () => {
+    expect(formatPeriod("2026-07-30", "amanha")).toBe("2026-07-30 a amanha");
   });
 });

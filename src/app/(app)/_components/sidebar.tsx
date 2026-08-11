@@ -1,5 +1,6 @@
 "use client";
 
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -10,10 +11,53 @@ const NAV_ITEMS = [
   { href: "/alerts", label: "Alertas" },
 ] as const;
 
+const REPOSITORIO = "https://github.com/SlowAkira/farol";
+
+// O lucide v1 removeu os icones de marca, entao nao existe mais um `Github`
+// para importar. Seta de link externo mais a palavra diz a mesma coisa sem
+// carregar um SVG de marca copiado para dentro do repo.
+function RodapeDaSidebar({ email, isDemo }: { email: string | null; isDemo: boolean }) {
+  return (
+    // `mt-auto` e o que prende o rodape na base da coluna; escondido abaixo do
+    // `md` porque ali a sidebar e uma faixa horizontal de tres itens, sem base
+    // onde prender. No celular o e-mail e o selo nao aparecem mesmo -- e
+    // informacao de contexto, nao acao, e a unica acao de sessao (sair) ja mora
+    // na topbar, que existe em toda largura.
+    <div className="mt-auto hidden flex-col gap-2 border-t border-sidebar-border pt-4 md:flex">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        {email ? (
+          // `truncate` com `title`: 14rem de coluna nao cabem um e-mail
+          // corporativo inteiro, e cortar sem deixar o valor completo em algum
+          // lugar transformaria o rodape em enigma.
+          <span className="truncate text-label text-muted-foreground" title={email}>
+            {email}
+          </span>
+        ) : null}
+        {isDemo ? (
+          // Selo neutro, nao de alerta: modo demo e um fato sobre a sessao, nao
+          // um problema. Ambar e vermelho continuam reservados a alerta.
+          <span className="w-fit rounded-full bg-muted px-2 py-0.5 text-label text-muted-foreground">
+            modo demo
+          </span>
+        ) : null}
+      </div>
+      <a
+        href={REPOSITORIO}
+        target="_blank"
+        rel="noreferrer"
+        className="transition-interactive flex items-center gap-1.5 text-label text-muted-foreground hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+        Repositório no GitHub
+      </a>
+    </div>
+  );
+}
+
 // usePathname exige client, e por isso a sidebar inteira e um leaf client em
 // vez de so o destaque da rota ativa: nao ha como isolar so o `usePathname`
 // num componente menor sem duplicar a lista de nav em dois lugares.
-export function Sidebar() {
+export function Sidebar({ email, isDemo }: { email: string | null; isDemo: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -46,6 +90,7 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <RodapeDaSidebar email={email} isDemo={isDemo} />
     </aside>
   );
 }

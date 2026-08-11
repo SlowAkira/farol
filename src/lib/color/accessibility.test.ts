@@ -119,6 +119,18 @@ const TEXTO: readonly Par[] = [
     onde: "item de navegacao e logo na sidebar",
   },
   {
+    frente: "--muted-foreground",
+    fundo: "--sidebar",
+    minimo: AA_TEXT,
+    onde: "e-mail e link do rodape da sidebar",
+  },
+  {
+    frente: "--muted-foreground",
+    fundo: "--muted",
+    minimo: AA_TEXT,
+    onde: "selo de modo demo",
+  },
+  {
     frente: "--brand-link",
     fundo: NAV_ATIVO,
     minimo: AA_TEXT,
