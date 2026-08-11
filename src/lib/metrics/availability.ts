@@ -13,6 +13,12 @@ const SEM_VALOR_DE_CONVERSAO = "Sem valor de conversão registrado no período";
 const SEM_GASTO = "Sem gasto registrado no período";
 const SEM_ALCANCE = "Sem alcance registrado no período";
 
+// A unica que nao sai dos totais: linha nenhuma ingerida e linha ingerida com
+// tudo zero chegam com os mesmos totais, e so quem consultou o banco sabe qual
+// das duas e. Mora aqui junto das outras porque e o mesmo vocabulario -- a
+// resposta a "por que ha um travessao aqui" nao deve estar espalhada.
+export const SEM_INGESTAO = "Sem métrica ingerida neste período";
+
 // Null quando a metrica se aplica: o motivo so existe onde ha travessao. Os
 // totais nunca caem aqui -- vieram de uma soma, e periodo sem linha nenhuma soma
 // zero de verdade, que e um numero medido e nao uma lacuna.
