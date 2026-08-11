@@ -3,13 +3,42 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// Aviso, e nao excecao: este arquivo tambem e carregado pelo `prisma generate`
+// do postinstall, que nao usa datasource nenhum, e derrubar a instalacao por uma
+// variavel que so o migrate precisa trocaria uma migration arriscada por um
+// deploy que nem comeca. O aviso aparece no log de build da Vercel, que e onde
+// quem configurou errado esta olhando.
+function migrationUrl(): string | undefined {
+  const direta = process.env["DIRECT_URL"];
+  if (!direta && process.env.NODE_ENV === "production") {
+    console.warn(
+      "[prisma] DIRECT_URL ausente: a migration vai sair por DATABASE_URL. " +
+        "Se essa for a URL com -pooler do Neon, o migrate pode travar em advisory lock.",
+    );
+  }
+
+  return direta ?? process.env["DATABASE_URL"];
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
+  // Este datasource e so do CLI (migrate, introspect). O runtime nao passa por
+  // aqui: src/lib/db/client.ts monta o PrismaClient com o adapter pg lendo
+  // DATABASE_URL direto. Por isso as duas URLs do Neon se separam exatamente
+  // nesta fronteira, e nao num campo `directUrl` -- o Prisma 7 removeu esse campo
+  // do schema e nao o tem no config ("The datasource property `directUrl` is no
+  // longer supported in schema files", P1012).
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // A direta, sem "-pooler". Migration nao pode passar por PgBouncer em modo
+    // transacao: ela abre advisory lock e usa prepared statements, que nao
+    // sobrevivem ao pooler, e o migrate trava ou falha no meio de um DDL.
+    // Cai em DATABASE_URL quando ausente, que e o mesmo fallback que o antigo
+    // `directUrl` tinha -- e o que mantem o banco local, com uma URL so,
+    // funcionando sem configurar nada.
+    url: migrationUrl(),
     // `npx prisma dev` sobe PGlite, que so tem o banco template1: sem apontar o
     // shadow para a segunda instancia, o migrate usa o proprio banco de dev como
     // shadow e o replay das migracoes morre em "type Platform already exists".
