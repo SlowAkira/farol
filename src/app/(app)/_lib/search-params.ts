@@ -27,7 +27,10 @@ export type Period = {
 
 export type SearchParamsInput = URLSearchParams | Record<string, string | string[] | undefined>;
 
-function readParam(searchParams: SearchParamsInput, key: string): string | undefined {
+// Exportada porque as duas formas de searchParams (URLSearchParams no cliente,
+// objeto simples no servidor) precisam ser lidas igual em qualquer pagina, e uma
+// segunda copia disto e onde `?sort=` funciona numa rota e nao na outra.
+export function readParam(searchParams: SearchParamsInput, key: string): string | undefined {
   if (searchParams instanceof URLSearchParams) {
     return searchParams.get(key) ?? undefined;
   }

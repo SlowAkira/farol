@@ -11,6 +11,7 @@ const {
   getAccountTotals,
   getCampaignBreakdown,
   getCampaignLastDataDate,
+  getCampaignTable,
   getDailySeries,
   getLastDataDateByAccount,
   getPreviousPeriod,
@@ -290,6 +291,65 @@ describe("getDailySeries", () => {
     const series = await getDailySeries(adAccountId, "2026-06-01", "2026-06-01");
 
     expect(totalsOf(series[0])).toEqual(sumTotals(meu));
+  });
+});
+
+describe("getCampaignTable", () => {
+  // A diferenca inteira para getCampaignBreakdown esta aqui: la a campanha sem
+  // insight no periodo sai da lista, aqui ela fica, marcada.
+  it("inclui campanha sem insight no periodo, marcada como sem dado", async () => {
+    const adAccountId = await seedAccount();
+    const comDado = await seedCampaign(adAccountId, "camp_a", { name: "Com dado" });
+    await seedCampaign(adAccountId, "camp_b", { name: "Sem dado" });
+
+    await db.prisma.dailyInsight.createMany({ data: insightRows([comDado], ["2026-06-02"]) });
+
+    const linhas = await getCampaignTable(adAccountId, "2026-06-01", "2026-06-05");
+    const porNome = new Map(linhas.map((linha) => [linha.name, linha]));
+
+    expect(linhas).toHaveLength(2);
+    expect(porNome.get("Com dado")?.hasData).toBe(true);
+    expect(porNome.get("Sem dado")?.hasData).toBe(false);
+    expect(porNome.get("Sem dado")?.totals).toEqual(sumTotals([]));
+  });
+
+  it("soma so o periodo pedido, e nao a vida toda da campanha", async () => {
+    const adAccountId = await seedAccount();
+    const campaign = await seedCampaign(adAccountId, "camp_a");
+
+    const dentro = insightRows([campaign], ["2026-06-02", "2026-06-03"]);
+    const fora = insightRows([campaign], ["2026-07-01"]);
+    await db.prisma.dailyInsight.createMany({ data: [...dentro, ...fora] });
+
+    const [linha] = await getCampaignTable(adAccountId, "2026-06-01", "2026-06-05");
+
+    expect(linha.totals).toEqual(sumTotals(dentro));
+    expect(linha.metrics).toEqual(computeMetrics(sumTotals(dentro)));
+  });
+
+  it("nao traz campanha de outra conta", async () => {
+    const adAccountId = await seedAccount();
+    await seedCampaign(adAccountId, "camp_a", { name: "Minha" });
+    const outraConta = await seedAccount();
+    await seedCampaign(outraConta, "camp_b", { name: "Da outra" });
+
+    const linhas = await getCampaignTable(adAccountId, "2026-06-01", "2026-06-05");
+
+    expect(linhas.map((linha) => linha.name)).toEqual(["Minha"]);
+  });
+
+  it("devolve lista vazia quando a conta nao tem campanha", async () => {
+    const adAccountId = await seedAccount();
+
+    expect(await getCampaignTable(adAccountId, "2026-06-01", "2026-06-05")).toEqual([]);
+  });
+
+  it("derruba com data fora do formato YYYY-MM-DD", async () => {
+    const adAccountId = await seedAccount();
+
+    await expect(getCampaignTable(adAccountId, "01/06/2026", "2026-06-05")).rejects.toThrow(
+      RangeError,
+    );
   });
 });
 

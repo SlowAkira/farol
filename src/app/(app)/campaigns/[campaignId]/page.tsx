@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OBJECTIVE_LABEL, STATUS_LABEL } from "@/lib/campaigns/labels";
 import { getCampaignDetail } from "@/lib/db/campaigns";
 import { getCampaignLastDataDate } from "@/lib/db/insights";
 import { formatMetric } from "@/lib/format";
@@ -8,20 +9,6 @@ import { metricUnavailability } from "@/lib/metrics/availability";
 import { metricValues } from "@/lib/metrics/calc";
 import { DASHBOARD_METRICS } from "@/lib/metrics/catalog";
 import { periodAnchor, resolvePeriod, type SearchParamsInput } from "../../_lib/search-params";
-
-const OBJECTIVE_LABEL = {
-  CONVERSIONS: "Conversões",
-  TRAFFIC: "Tráfego",
-  AWARENESS: "Reconhecimento",
-  LEADS: "Leads",
-} as const;
-
-const STATUS_LABEL = {
-  ACTIVE: "Ativa",
-  PAUSED: "Pausada",
-  ARCHIVED: "Arquivada",
-  DELETED: "Excluída",
-} as const;
 
 export default async function CampaignDetailPage({
   params,
