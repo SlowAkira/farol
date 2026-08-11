@@ -1,10 +1,14 @@
 import type { ReactNode } from "react";
 import { listDashboardAccounts } from "@/lib/db/accounts";
+import { getLastDataDateByAccount } from "@/lib/db/insights";
 import { Sidebar } from "./_components/sidebar";
 import { Topbar } from "./_components/topbar";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const accounts = await listDashboardAccounts();
+  const [accounts, ultimoDiaPorConta] = await Promise.all([
+    listDashboardAccounts(),
+    getLastDataDateByAccount(),
+  ]);
 
   return (
     // Em telas estreitas a navegacao vira faixa no topo e a pagina rola inteira;
@@ -16,7 +20,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className="grid min-h-screen grid-cols-1 md:h-screen md:grid-cols-[14rem_1fr]">
       <Sidebar />
       <div className="flex min-w-0 flex-col md:h-screen md:overflow-hidden">
-        <Topbar accounts={accounts} />
+        <Topbar accounts={accounts} ultimoDiaPorConta={ultimoDiaPorConta} />
         <main className="min-w-0 flex-1 p-4 md:overflow-y-auto md:p-10">{children}</main>
       </div>
     </div>

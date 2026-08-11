@@ -31,6 +31,11 @@ import {
 
 export type TrendRow = { readonly date: string; readonly label: string } & {
   readonly [K in DashboardMetricKey]: number | null;
+} & {
+  // Por que cada metrica nao se aplica naquele dia, quando nao se aplica. Vem
+  // pronto do servidor: os totais do dia ficam la, e este componente e cliente
+  // -- ele nao divide numero nem deduz o que faltou, so mostra a frase.
+  readonly motivos: { readonly [K in DashboardMetricKey]?: string };
 };
 
 const AXIS_TICK = { fill: "var(--color-muted-foreground)", fontSize: 12 } as const;
@@ -40,15 +45,17 @@ const CHART_MARGIN = { top: 8, right: 8, bottom: 0, left: 0 } as const;
 function TooltipRow({
   definition,
   value,
+  motivo,
   currency,
   mark,
 }: {
   definition: MetricDefinition;
   value: number | null;
+  motivo: string | undefined;
   currency: string;
   mark: "bar" | "line";
 }) {
-  const formatted = formatMetric(value, definition.unit, currency);
+  const formatted = formatMetric(value, definition.unit, currency, motivo);
 
   return (
     <div className="flex items-baseline justify-between gap-6">
@@ -92,12 +99,14 @@ function renderTooltip(
         <TooltipRow
           definition={barDefinition}
           value={row[barDefinition.key as DashboardMetricKey]}
+          motivo={row.motivos[barDefinition.key as DashboardMetricKey]}
           currency={currency}
           mark="bar"
         />
         <TooltipRow
           definition={lineDefinition}
           value={row[lineDefinition.key as DashboardMetricKey]}
+          motivo={row.motivos[lineDefinition.key as DashboardMetricKey]}
           currency={currency}
           mark="line"
         />
@@ -195,11 +204,13 @@ function TrendTable({
               row[barDefinition.key as DashboardMetricKey],
               barDefinition.unit,
               currency,
+              row.motivos[barDefinition.key as DashboardMetricKey],
             );
             const lineValue = formatMetric(
               row[lineDefinition.key as DashboardMetricKey],
               lineDefinition.unit,
               currency,
+              row.motivos[lineDefinition.key as DashboardMetricKey],
             );
 
             return (

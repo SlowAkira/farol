@@ -10,7 +10,13 @@ import { ThemeToggle } from "./theme-toggle";
 // prerenderizacao de toda pagina do grupo (app) com "useSearchParams() should be
 // wrapped in a suspense boundary". O fallback tem a medida do controle para o
 // cabecalho nao mudar de altura quando ele entra.
-export function Topbar({ accounts }: { accounts: DashboardAccount[] }) {
+export function Topbar({
+  accounts,
+  ultimoDiaPorConta,
+}: {
+  accounts: DashboardAccount[];
+  ultimoDiaPorConta: Record<string, string>;
+}) {
   // Achata para um view model serializavel antes de cruzar a fronteira de
   // cliente: o seletor precisa saber que a conta esta desconectada, mas nao
   // precisa (nem pode) importar o enum do Prisma para descobrir isso.
@@ -18,6 +24,7 @@ export function Topbar({ accounts }: { accounts: DashboardAccount[] }) {
     id: account.id,
     name: account.name,
     desconectada: isDisconnected(account),
+    ultimoDiaComDado: ultimoDiaPorConta[account.id] ?? null,
   }));
 
   return (
@@ -27,7 +34,7 @@ export function Topbar({ accounts }: { accounts: DashboardAccount[] }) {
       </Suspense>
       <div className="flex flex-wrap items-center gap-3">
         <Suspense fallback={<Skeleton className="h-8 w-72 max-w-full" />}>
-          <DateRangePicker />
+          <DateRangePicker accounts={options} />
         </Suspense>
         <ThemeToggle />
       </div>

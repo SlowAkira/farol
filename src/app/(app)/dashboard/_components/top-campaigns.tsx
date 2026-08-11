@@ -13,6 +13,7 @@ import {
 import type { CampaignRoster } from "@/lib/db/campaigns";
 import { getCampaignBreakdown } from "@/lib/db/insights";
 import { formatMetric } from "@/lib/format";
+import { metricUnavailability } from "@/lib/metrics/availability";
 import { metricDefinition, type DashboardMetricKey } from "@/lib/metrics/catalog";
 import { metricValues } from "@/lib/metrics/calc";
 
@@ -109,6 +110,7 @@ export async function TopCampaigns({
                         values[key],
                         metricDefinition(key).unit,
                         currency,
+                        metricUnavailability(key, campaign.totals),
                       );
 
                       return (

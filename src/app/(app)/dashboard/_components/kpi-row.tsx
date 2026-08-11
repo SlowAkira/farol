@@ -46,6 +46,7 @@ export async function KpiRow({
             key={definition.key}
             definition={definition}
             comparison={comparison[definition.key]}
+            totals={currentTotals}
             trend={trend.map((values) => values[definition.key])}
             currency={currency}
           />

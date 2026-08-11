@@ -10,10 +10,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { resolveAccountId, withParams } from "../_lib/search-params";
 
+// Um view model para os dois controles do cabecalho. O seletor de periodo
+// precisa do ultimo dia medido da conta aberta, e so descobre qual conta e essa
+// no cliente (o layout nao le searchParams); carregar o campo aqui evita uma
+// segunda lista, em outra ordem, so para responder isso.
 export type AccountOption = {
   readonly id: string;
   readonly name: string;
   readonly desconectada: boolean;
+  readonly ultimoDiaComDado: string | null;
 };
 
 // Marca em texto, e nao em cor: "desconectada" precisa ser legivel sem depender

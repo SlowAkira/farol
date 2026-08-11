@@ -9,6 +9,17 @@ const DEFAULT_PRESET_DAYS: PeriodPresetDays = 7;
 // periodo padrao; UTC e a referencia neutra ate uma conta entrar em cena.
 const REFERENCE_TIMEZONE = "UTC";
 
+// Onde o periodo padrao termina. O ultimo dia medido da conta, quando existe:
+// ancorar em ontem faz o preset de 7 dias pedir 7 dias e receber os 3 que a
+// ingestao ja alcancou, e o grafico -- que corta o rabo sem dado -- termina
+// parecendo quebrado, quando quem esta atrasada e a ingestao.
+//
+// Conta recem-conectada ainda nao tem dia medido nenhum, e ai ontem volta a ser
+// o fim: e o ultimo dia que ja fechou, a mesma referencia que a ingestao usa.
+export function periodAnchor(lastDataDate: string | null): string {
+  return lastDataDate ?? addDays(todayIn(REFERENCE_TIMEZONE), -1);
+}
+
 export type Period = {
   readonly since: string;
   readonly until: string;
@@ -24,17 +35,17 @@ function readParam(searchParams: SearchParamsInput, key: string): string | undef
   return Array.isArray(value) ? value[0] : value;
 }
 
-// Termina ontem (ultimo dia completo, mesma logica de src/lib/ingestion/sync.ts),
-// nao hoje: o dado de hoje ainda esta incompleto.
-export function periodForPreset(days: PeriodPresetDays): Period {
-  const until = addDays(todayIn(REFERENCE_TIMEZONE), -1);
-  const since = addDays(until, -(days - 1));
-  return { since, until };
+// A ancora e parametro, e nao lida aqui dentro, porque ela vem do banco: assim a
+// mesma funcao serve o servidor (que consulta a conta) e o seletor de periodo no
+// cliente (que recebe a data pronta), e os dois nao podem discordar sobre onde o
+// preset de N dias termina.
+export function periodForPreset(days: PeriodPresetDays, anchor: string): Period {
+  return { since: addDays(anchor, -(days - 1)), until: anchor };
 }
 
 // since/until vem da URL, editavel por qualquer um: entrada invalida ou
 // invertida cai no preset padrao em vez de lancar erro.
-export function resolvePeriod(searchParams: SearchParamsInput): Period {
+export function resolvePeriod(searchParams: SearchParamsInput, anchor: string): Period {
   const since = readParam(searchParams, "since");
   const until = readParam(searchParams, "until");
 
@@ -42,7 +53,7 @@ export function resolvePeriod(searchParams: SearchParamsInput): Period {
     return { since, until };
   }
 
-  return periodForPreset(DEFAULT_PRESET_DAYS);
+  return periodForPreset(DEFAULT_PRESET_DAYS, anchor);
 }
 
 // So precisa do id, e o tipo diz isso: assim o seletor (que e client) resolve a

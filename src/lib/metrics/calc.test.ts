@@ -65,6 +65,14 @@ describe("roas", () => {
     expect(roas(400_000, 0)).toBeNull();
     expect(roas(0, 0)).toBeNull();
   });
+
+  // Diferente das outras derivadas: aqui o zero esta no numerador e a divisao
+  // seria perfeitamente possivel. E null mesmo assim porque "0,0x" na tela se le
+  // como "a verba nao voltou nada", quando a campanha e de topo de funil e nunca
+  // teve receita para atribuir.
+  it("devolve null sem valor de conversao, em vez de zero", () => {
+    expect(roas(0, 50_000)).toBeNull();
+  });
 });
 
 describe("frequency", () => {

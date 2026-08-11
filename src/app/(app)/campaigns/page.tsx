@@ -1,5 +1,11 @@
-import { listSyncableAccounts } from "@/lib/db/accounts";
-import { resolveAccountId, resolvePeriod, type SearchParamsInput } from "../_lib/search-params";
+import { listDashboardAccounts } from "@/lib/db/accounts";
+import { getAccountLastDataDate } from "@/lib/db/insights";
+import {
+  periodAnchor,
+  resolveAccountId,
+  resolvePeriod,
+  type SearchParamsInput,
+} from "../_lib/search-params";
 
 export default async function CampaignsPage({
   searchParams,
@@ -7,9 +13,15 @@ export default async function CampaignsPage({
   searchParams: Promise<SearchParamsInput>;
 }) {
   const params = await searchParams;
-  const accounts = await listSyncableAccounts();
+  // A mesma lista que a topbar recebe, e nao a de contas sincronizaveis: agora
+  // que o periodo padrao sai da conta, resolver a conta de outro jeito aqui faz
+  // o seletor de periodo e a pagina ancorarem em datas diferentes.
+  const accounts = await listDashboardAccounts();
   const accountId = resolveAccountId(params, accounts);
-  const period = resolvePeriod(params);
+  const period = resolvePeriod(
+    params,
+    periodAnchor(accountId === null ? null : await getAccountLastDataDate(accountId)),
+  );
 
   if (!accountId) {
     return (

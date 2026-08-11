@@ -168,6 +168,75 @@ export async function getCampaignBreakdown(
     .sort((a, b) => b.totals.spendCents - a.totals.spendCents);
 }
 
+// A ingestao roda com atraso, entao "hoje" e quase sempre mais tarde que o
+// ultimo dia medido. Ancorar o periodo padrao aqui, e nao no calendario, e o que
+// faz "7 dias" mostrar sete dias com dado em vez de tres barras e quatro buracos
+// que o grafico corta depois.
+export async function getAccountLastDataDate(accountId: string): Promise<string | null> {
+  const { _max } = await getPrisma().dailyInsight.aggregate({
+    where: { campaign: { adAccountId: accountId } },
+    _max: { date: true },
+  });
+
+  return _max.date;
+}
+
+export async function getCampaignLastDataDate(campaignId: string): Promise<string | null> {
+  const { _max } = await getPrisma().dailyInsight.aggregate({
+    where: { campaignId },
+    _max: { date: true },
+  });
+
+  return _max.date;
+}
+
+// O seletor de periodo vive no layout, que nao le searchParams e por isso nao
+// sabe qual conta esta aberta: ele recebe a ancora de todas e escolhe a sua ja
+// no cliente. Sem isso o botao "7d" calcularia um periodo diferente do que o
+// servidor resolveu e nenhum preset apareceria como ativo.
+//
+// O groupBy varre a tabela inteira de insights, sem filtro de conta, e roda em
+// toda navegacao do grupo (app). Aguenta a escala de hoje e nao aguenta a de
+// sempre: passando da casa dos milhoes de linhas isto vira um MAX(date) por
+// conta em SQL. Nao ja: $queryRaw aqui erra de schema sob o adaptador (o motivo
+// esta em getDailySeries), e trocar corretude por velocidade que ainda nao falta
+// e o pior dos dois lados.
+export async function getLastDataDateByAccount(): Promise<Record<string, string>> {
+  const prisma = getPrisma();
+  const grouped = await prisma.dailyInsight.groupBy({
+    by: ["campaignId"],
+    _max: { date: true },
+  });
+
+  if (grouped.length === 0) {
+    return {};
+  }
+
+  const campaigns = await prisma.campaign.findMany({
+    where: { id: { in: grouped.map((row) => row.campaignId) } },
+    select: { id: true, adAccountId: true },
+  });
+  const accountByCampaign = new Map(campaigns.map((campaign) => [campaign.id, campaign.adAccountId]));
+
+  const lastByAccount: Record<string, string> = {};
+  for (const row of grouped) {
+    const accountId = accountByCampaign.get(row.campaignId);
+    const date = row._max.date;
+    if (accountId === undefined || date === null) {
+      continue;
+    }
+
+    // YYYY-MM-DD ordena lexicograficamente na ordem do calendario, que e metade
+    // do motivo de as datas de metrica serem string neste projeto.
+    const atual = lastByAccount[accountId];
+    if (atual === undefined || date > atual) {
+      lastByAccount[accountId] = date;
+    }
+  }
+
+  return lastByAccount;
+}
+
 // Mesma duracao do periodo atual, terminando no dia anterior ao inicio: e o
 // "periodo anterior" que a comparacao do painel espera, nao os N dias corridos
 // antes de hoje.

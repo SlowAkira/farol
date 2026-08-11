@@ -7,11 +7,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   PERIOD_PRESET_DAYS,
+  periodAnchor,
   periodForPreset,
+  resolveAccountId,
   resolvePeriod,
   withParams,
   type PeriodPresetDays,
 } from "../_lib/search-params";
+import type { AccountOption } from "./account-selector";
 
 // Ponte para o Calendar (react-day-picker, API em Date) na borda do
 // componente; o resto do projeto continua trabalhando com string YYYY-MM-DD.
@@ -23,18 +26,25 @@ function toIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function DateRangePicker() {
+export function DateRangePicker({ accounts }: { accounts: readonly AccountOption[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const period = resolvePeriod(searchParams);
   const [open, setOpen] = useState(false);
+
+  // Resolve a conta pelo mesmo caminho que a pagina do servidor resolve, e a
+  // partir da mesma lista na mesma ordem: os presets tem que terminar onde o
+  // periodo que o servidor montou termina, senao nenhum aparece ativo.
+  const selectedId = resolveAccountId(searchParams, accounts);
+  const selected = accounts.find((account) => account.id === selectedId);
+  const anchor = periodAnchor(selected?.ultimoDiaComDado ?? null);
+  const period = resolvePeriod(searchParams, anchor);
 
   function navigate(next: { since: string; until: string }): void {
     router.push(`?${withParams(searchParams, next)}`);
   }
 
   const activePresetDays = PERIOD_PRESET_DAYS.find((days: PeriodPresetDays) => {
-    const preset = periodForPreset(days);
+    const preset = periodForPreset(days, anchor);
     return preset.since === period.since && preset.until === period.until;
   });
 
@@ -49,7 +59,7 @@ export function DateRangePicker() {
           type="button"
           variant={activePresetDays === days ? "default" : "outline"}
           size="sm"
-          onClick={() => navigate(periodForPreset(days))}
+          onClick={() => navigate(periodForPreset(days, anchor))}
         >
           {days}d
         </Button>
