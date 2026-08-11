@@ -102,13 +102,18 @@ export type FormattedMetric = {
   readonly title: string;
 };
 
+// `motivo` vem de src/lib/metrics/availability: e a grandeza que faltou para a
+// metrica existir ("Sem conversão registrada no período"). Opcional porque nem
+// todo chamador tem os totais em maos -- eixo de grafico formata numero solto --
+// e nesses casos o travessao cai na frase generica, que e vaga mas nao falsa.
 export function formatMetric(
   value: number | null,
   unit: MetricUnit,
   currency: string,
+  motivo?: string | null,
 ): FormattedMetric {
   if (value === null) {
-    return { display: EMPTY_DISPLAY, title: EMPTY_TITLE };
+    return { display: EMPTY_DISPLAY, title: motivo ?? EMPTY_TITLE };
   }
 
   switch (unit) {

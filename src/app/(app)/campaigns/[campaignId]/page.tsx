@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCampaignDetail } from "@/lib/db/campaigns";
+import { getCampaignLastDataDate } from "@/lib/db/insights";
 import { formatMetric } from "@/lib/format";
+import { metricUnavailability } from "@/lib/metrics/availability";
 import { metricValues } from "@/lib/metrics/calc";
 import { DASHBOARD_METRICS } from "@/lib/metrics/catalog";
-import { resolvePeriod, type SearchParamsInput } from "../../_lib/search-params";
+import { periodAnchor, resolvePeriod, type SearchParamsInput } from "../../_lib/search-params";
 
 const OBJECTIVE_LABEL = {
   CONVERSIONS: "Conversões",
@@ -29,7 +31,13 @@ export default async function CampaignDetailPage({
   searchParams: Promise<SearchParamsInput>;
 }) {
   const { campaignId } = await params;
-  const period = resolvePeriod(await searchParams);
+  // Ancora no ultimo dia da propria campanha, e nao no da conta: campanha
+  // encerrada meses atras abriria num periodo em que ela ja nao rodava, e a
+  // pagina inteira sairia em travessao.
+  const period = resolvePeriod(
+    await searchParams,
+    periodAnchor(await getCampaignLastDataDate(campaignId)),
+  );
 
   const campaign = await getCampaignDetail(campaignId, period.since, period.until);
   if (!campaign) {
@@ -65,6 +73,7 @@ export default async function CampaignDetailPage({
             values[definition.key],
             definition.unit,
             campaign.account.currency,
+            metricUnavailability(definition.key, campaign.totals),
           );
 
           return (

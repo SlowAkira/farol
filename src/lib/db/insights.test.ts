@@ -6,9 +6,15 @@ import { createTestDatabase, resetTables, type TestDatabase } from "@/test/db";
 const wiring = vi.hoisted(() => ({ prisma: null as unknown }));
 vi.mock("@/lib/db/client", () => ({ getPrisma: () => wiring.prisma }));
 
-const { getAccountTotals, getCampaignBreakdown, getDailySeries, getPreviousPeriod } = await import(
-  "./insights"
-);
+const {
+  getAccountLastDataDate,
+  getAccountTotals,
+  getCampaignBreakdown,
+  getCampaignLastDataDate,
+  getDailySeries,
+  getLastDataDateByAccount,
+  getPreviousPeriod,
+} = await import("./insights");
 type DailyTotals = Awaited<ReturnType<typeof getDailySeries>>[number];
 
 let db: TestDatabase;
@@ -284,6 +290,71 @@ describe("getDailySeries", () => {
     const series = await getDailySeries(adAccountId, "2026-06-01", "2026-06-01");
 
     expect(totalsOf(series[0])).toEqual(sumTotals(meu));
+  });
+});
+
+describe("ultimo dia com dado", () => {
+  it("devolve o dia mais recente da conta, e nao o da campanha mais recente", async () => {
+    const adAccountId = await seedAccount();
+    const campaignA = await seedCampaign(adAccountId, "camp_a");
+    const campaignB = await seedCampaign(adAccountId, "camp_b");
+
+    await db.prisma.dailyInsight.createMany({
+      data: [
+        ...insightRows([campaignA], ["2026-06-01", "2026-06-09"]),
+        ...insightRows([campaignB], ["2026-06-04"]),
+      ],
+    });
+
+    expect(await getAccountLastDataDate(adAccountId)).toBe("2026-06-09");
+    expect(await getCampaignLastDataDate(campaignB)).toBe("2026-06-04");
+  });
+
+  it("devolve null quando a conta ainda nao tem insight nenhum", async () => {
+    const adAccountId = await seedAccount();
+    await seedCampaign(adAccountId, "camp_a");
+
+    expect(await getAccountLastDataDate(adAccountId)).toBeNull();
+    expect(await getLastDataDateByAccount()).toEqual({});
+  });
+
+  it("nao deixa o dia de uma conta vazar para outra", async () => {
+    const minhaConta = await seedAccount();
+    const minhaCampanha = await seedCampaign(minhaConta, "camp_a");
+    const outraConta = await seedAccount();
+    const outraCampanha = await seedCampaign(outraConta, "camp_b");
+
+    await db.prisma.dailyInsight.createMany({
+      data: [
+        ...insightRows([minhaCampanha], ["2026-06-02"]),
+        ...insightRows([outraCampanha], ["2026-06-20"]),
+      ],
+    });
+
+    expect(await getAccountLastDataDate(minhaConta)).toBe("2026-06-02");
+    expect(await getLastDataDateByAccount()).toEqual({
+      [minhaConta]: "2026-06-02",
+      [outraConta]: "2026-06-20",
+    });
+  });
+
+  // O mapa reduz por conta em JavaScript sobre um groupBy por campanha, e e ai
+  // que um maximo por campanha pode ser confundido com o maximo da conta.
+  it("reduz para o maior dia entre as campanhas da mesma conta", async () => {
+    const adAccountId = await seedAccount();
+    const campaignA = await seedCampaign(adAccountId, "camp_a");
+    const campaignB = await seedCampaign(adAccountId, "camp_b");
+    const campaignC = await seedCampaign(adAccountId, "camp_c");
+
+    await db.prisma.dailyInsight.createMany({
+      data: [
+        ...insightRows([campaignA], ["2026-06-11"]),
+        ...insightRows([campaignB], ["2026-06-30"]),
+        ...insightRows([campaignC], ["2026-06-07"]),
+      ],
+    });
+
+    expect(await getLastDataDateByAccount()).toEqual({ [adAccountId]: "2026-06-30" });
   });
 });
 

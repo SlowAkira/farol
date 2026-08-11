@@ -101,6 +101,21 @@ describe("formatMetric", () => {
     expect(semDado.display).toBe("—");
     expect(semDado.title).toBe("Sem dados no período");
   });
+
+  it("usa o motivo no title quando quem chama sabe qual grandeza faltou", () => {
+    const semConversao = formatMetric(null, "currency", "BRL", "Sem conversão registrada no período");
+
+    expect(semConversao.display).toBe("—");
+    expect(semConversao.title).toBe("Sem conversão registrada no período");
+  });
+
+  // Um motivo em cima de numero valido seria explicacao de algo que a tela nao
+  // esta dizendo: o travessao e a unica coisa que pede explicacao.
+  it("ignora o motivo quando ha valor", () => {
+    expect(normalize(formatMetric(500, "currency", "BRL", "Sem gasto registrado").title)).toBe(
+      "R$ 5,00",
+    );
+  });
 });
 
 describe("formatDelta", () => {

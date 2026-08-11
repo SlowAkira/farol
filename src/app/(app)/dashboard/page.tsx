@@ -5,7 +5,13 @@ import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { isDisconnected, listDashboardAccounts } from "@/lib/db/accounts";
 import { getCampaignRoster } from "@/lib/db/campaigns";
-import { resolveAccountId, resolvePeriod, type SearchParamsInput } from "../_lib/search-params";
+import { getAccountLastDataDate } from "@/lib/db/insights";
+import {
+  periodAnchor,
+  resolveAccountId,
+  resolvePeriod,
+  type SearchParamsInput,
+} from "../_lib/search-params";
 import { KpiRow } from "./_components/kpi-row";
 import {
   KpiRowSkeleton,
@@ -42,12 +48,18 @@ export default async function DashboardPage({
 }) {
   const params = await searchParams;
   const accounts = await listDashboardAccounts();
-  const period = resolvePeriod(params);
 
   // listDashboardAccounts ja entrega as desconectadas no fim, que e a mesma
   // ordem que a topbar recebe: as duas resolvem a conta padrao por conta propria
   // e precisam chegar na mesma.
   const accountId = resolveAccountId(params, accounts);
+
+  // O periodo depende da conta, entao so sai depois dela: e o ultimo dia que a
+  // ingestao desta conta alcancou que fecha o periodo padrao, nao o calendario.
+  const period = resolvePeriod(
+    params,
+    periodAnchor(accountId === null ? null : await getAccountLastDataDate(accountId)),
+  );
 
   if (!accountId) {
     return (

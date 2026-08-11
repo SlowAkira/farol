@@ -42,7 +42,15 @@ export function cpa(spendCents: number, conversions: number): number | null {
   return safeDivide(spendCents, conversions);
 }
 
+// Valor de conversao zerado nao e "retorno zero", e retorno que ninguem mediu:
+// campanha de topo de funil, video ou lead sem valor atribuido gasta verba sem
+// nunca registrar receita. Devolver 0 ali faz o painel afirmar que a verba nao
+// voltou nada, que e uma acusacao, e nao uma medicao. Sem denominador tambem e
+// null, pelo motivo de sempre.
 export function roas(conversionValueCents: number, spendCents: number): number | null {
+  if (conversionValueCents === 0) {
+    return null;
+  }
   return safeDivide(conversionValueCents, spendCents);
 }
 

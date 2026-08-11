@@ -44,12 +44,26 @@ type Resultado = {
   readonly transbordo: number;
 };
 
-async function servidorNoAr(): Promise<boolean> {
+type Alcance = { readonly ok: true } | { readonly ok: false; readonly motivo: string };
+
+// Timeout de navegacao, e nao de ping: o `next dev` compila a rota na primeira
+// visita, e um servidor recem-subido leva dezenas de segundos para responder a
+// primeira vez. Com 5 segundos o script desistia de um servidor que estava de pe
+// e so estava compilando. De quebra, esta requisicao ja aquece a landing.
+async function alcancarServidor(): Promise<Alcance> {
   try {
-    const response = await fetch(BASE_URL, { signal: AbortSignal.timeout(5_000) });
-    return response.ok;
-  } catch {
-    return false;
+    const response = await fetch(BASE_URL, { signal: AbortSignal.timeout(NAVIGATION_TIMEOUT_MS) });
+    if (response.ok) {
+      return { ok: true };
+    }
+
+    // Servidor de pe respondendo erro e um problema diferente de servidor no ar
+    // nenhum, e mandar "suba o app" para quem ja subiu manda procurar no lugar
+    // errado.
+    return { ok: false, motivo: `${BASE_URL} respondeu ${response.status}.` };
+  } catch (error) {
+    const detalhe = error instanceof Error ? error.message : String(error);
+    return { ok: false, motivo: `nada respondendo em ${BASE_URL} (${detalhe}): ${USO}` };
   }
 }
 
@@ -80,8 +94,9 @@ async function capturar(page: Page, caminho: string, arquivo: string): Promise<R
 }
 
 async function main(): Promise<void> {
-  if (!(await servidorNoAr())) {
-    console.error(`nada respondendo em ${BASE_URL}: ${USO}`);
+  const alcance = await alcancarServidor();
+  if (!alcance.ok) {
+    console.error(alcance.motivo);
     process.exitCode = 1;
     return;
   }

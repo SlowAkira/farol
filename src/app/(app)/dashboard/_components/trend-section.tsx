@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { trimToLastDataDay } from "@/lib/charts/series";
 import { getDailySeries } from "@/lib/db/insights";
 import { formatDayLabel } from "@/lib/format";
+import { metricUnavailability } from "@/lib/metrics/availability";
 import { metricValues } from "@/lib/metrics/calc";
+import { DASHBOARD_METRICS } from "@/lib/metrics/catalog";
 import { TrendChart, type TrendRow } from "./trend-chart";
 
 export async function TrendSection({
@@ -23,9 +25,18 @@ export async function TrendSection({
   const { days: measured, lastDataDate } = trimToLastDataDay(days);
 
   // As derivadas de cada dia saem daqui, no servidor, via src/lib/metrics: o
-  // componente cliente do grafico so recebe numero pronto e nunca divide.
+  // componente cliente do grafico so recebe numero pronto e nunca divide. O
+  // mesmo vale para o motivo do travessao, que depende dos totais do dia.
   const rows: TrendRow[] = measured.map((day) => {
     const values = metricValues(day);
+    const motivos: { [K in (typeof DASHBOARD_METRICS)[number]["key"]]?: string } = {};
+
+    for (const { key } of DASHBOARD_METRICS) {
+      const motivo = metricUnavailability(key, day);
+      if (motivo !== null) {
+        motivos[key] = motivo;
+      }
+    }
 
     return {
       date: day.date,
@@ -35,6 +46,7 @@ export async function TrendSection({
       cpaCents: values.cpaCents,
       conversions: values.conversions,
       ctrPercent: values.ctrPercent,
+      motivos,
     };
   });
 
