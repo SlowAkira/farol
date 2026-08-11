@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { isDisconnected, type DashboardAccount } from "@/lib/db/accounts";
 import { AccountSelector, type AccountOption } from "./account-selector";
 import { DateRangePicker } from "./date-range-picker";
+import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
 
 // Os dois controles leem a query string com useSearchParams, e o Next exige que
@@ -37,6 +38,7 @@ export function Topbar({
           <DateRangePicker accounts={options} />
         </Suspense>
         <ThemeToggle />
+        <SignOutButton />
       </div>
     </header>
   );

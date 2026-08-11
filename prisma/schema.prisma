@@ -40,14 +40,75 @@ enum CampaignStatus {
   DELETED
 }
 
+enum AlertMetric {
+  CPA
+  ROAS
+  CTR
+  CPM
+  SPEND
+}
+
+enum AlertComparison {
+  INCREASE_PCT
+  DECREASE_PCT
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  createdAt DateTime @default(now())
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  // Usuario fixo criado pelo prisma/seed.ts. auth.ts usa isto (via callback de
+  // sessao) para bloquear mutacao sem precisar comparar e-mail em toda action.
+  isDemo        Boolean   @default(false)
+  createdAt     DateTime  @default(now())
 
   adAccounts AdAccount[]
+  alertRules AlertRule[]
+  accounts   Account[]
+  sessions   Session[]
+}
+
+// Modelos abaixo seguem o schema padrao do @auth/prisma-adapter (nomes e tipos
+// de campo nao sao escolha nossa): mudar a forma quebra o adapter em silencio.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// Sem uso em runtime enquanto a sessao for JWT (login demo exige isso, ja que
+// Credentials provider nao roda com strategy "database"), mas o adapter exige
+// o delegate para o Google poder linkar conta na troca futura de estrategia.
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model AdAccount {
@@ -61,8 +122,9 @@ model AdAccount {
   status     AccountStatus @default(ACTIVE)
   createdAt  DateTime      @default(now())
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  campaigns Campaign[]
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaigns  Campaign[]
+  alertRules AlertRule[]
 
   @@unique([userId, platform, externalId])
 }
@@ -77,10 +139,35 @@ model Campaign {
   dailyBudgetCents Int?
   createdAt        DateTime          @default(now())
 
-  adAccount AdAccount      @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
-  insights  DailyInsight[]
+  adAccount  AdAccount      @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+  insights   DailyInsight[]
+  alertRules AlertRule[]
 
   @@unique([adAccountId, externalId])
+}
+
+// Regra de alerta: compara a media de `metric` nos ultimos `windowDays` contra
+// a mesma janela imediatamente anterior. So o schema e o seed (tres regras,
+// prisma/seed.ts) fazem parte desta fase -- o motor que le DailyInsight e
+// decide se a regra disparou fica para quando /alerts sair de "Em breve".
+model AlertRule {
+  id           String          @id @default(cuid())
+  userId       String
+  adAccountId  String
+  // Nulo = regra da conta inteira; preenchido = regra de uma campanha so.
+  campaignId   String?
+  name         String
+  metric       AlertMetric
+  comparison   AlertComparison
+  thresholdPct Int
+  windowDays   Int             @default(7)
+  createdAt    DateTime        @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adAccount AdAccount @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+  campaign  Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
 }
 
 model DailyInsight {
