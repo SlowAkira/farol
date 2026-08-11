@@ -168,6 +168,58 @@ export async function getCampaignBreakdown(
     .sort((a, b) => b.totals.spendCents - a.totals.spendCents);
 }
 
+export type CampaignTableRow = CampaignBreakdownRow & {
+  // Mesma distincao de DailyTotals, um nivel acima: campanha sem nenhum insight
+  // no periodo chega com os totais zerados, identica a uma que rodou e gastou
+  // zero. Quem monta a linha precisa saber a diferenca para nao escrever "R$ 0"
+  // onde ninguem mediu nada.
+  readonly hasData: boolean;
+};
+
+// Irma de getCampaignBreakdown, com a pergunta invertida. La e "quem contribuiu
+// no periodo", e campanha sem insight fica de fora de proposito. Aqui e o
+// catalogo da conta: campanha que nao rodou no periodo continua sendo campanha
+// da conta, e some-la faria a lista mudar de tamanho conforme o periodo, o que
+// se le como campanha excluida.
+export async function getCampaignTable(
+  accountId: string,
+  since: string,
+  until: string,
+): Promise<CampaignTableRow[]> {
+  assertPeriod(since, until);
+
+  const prisma = getPrisma();
+  const [campaigns, grouped] = await Promise.all([
+    prisma.campaign.findMany({
+      where: { adAccountId: accountId },
+      select: { id: true, externalId: true, name: true, objective: true, status: true },
+    }),
+    prisma.dailyInsight.groupBy({
+      by: ["campaignId"],
+      where: { date: { gte: since, lte: until }, campaign: { adAccountId: accountId } },
+      _sum: SUM_SELECT,
+    }),
+  ]);
+
+  const totalsByCampaign = new Map(grouped.map((row) => [row.campaignId, totalsFromSum(row._sum)]));
+
+  return campaigns.map((campaign) => {
+    const medido = totalsByCampaign.get(campaign.id);
+    const totals = medido ?? ZERO_TOTALS;
+
+    return {
+      campaignId: campaign.id,
+      externalId: campaign.externalId,
+      name: campaign.name,
+      objective: campaign.objective,
+      status: campaign.status,
+      hasData: medido !== undefined,
+      totals,
+      metrics: computeMetrics(totals),
+    };
+  });
+}
+
 // A ingestao roda com atraso, entao "hoje" e quase sempre mais tarde que o
 // ultimo dia medido. Ancorar o periodo padrao aqui, e nao no calendario, e o que
 // faz "7 dias" mostrar sete dias com dado em vez de tres barras e quatro buracos
