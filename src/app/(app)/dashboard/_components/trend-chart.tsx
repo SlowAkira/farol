@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { formatMetric } from "@/lib/format";
 import {
   DASHBOARD_METRICS,
@@ -41,6 +42,10 @@ export type TrendRow = { readonly date: string; readonly label: string } & {
 const AXIS_TICK = { fill: "var(--color-muted-foreground)", fontSize: 12 } as const;
 const PANEL_HEIGHT = 200;
 const CHART_MARGIN = { top: 8, right: 8, bottom: 0, left: 0 } as const;
+// Desenho das series: uma vez, ao carregar. Trocar a metrica no seletor nao
+// redesenha -- animar a cada troca transformaria um controle de leitura em
+// espera, e o valor novo demoraria a aparecer.
+const DRAW_MS = 300;
 
 function TooltipRow({
   definition,
@@ -93,7 +98,7 @@ function renderTooltip(
   }
 
   return (
-    <div className="rounded-md border border-border bg-popover px-3 py-2 text-sm shadow-md">
+    <div className="rounded-md border border-border bg-popover px-3 py-2 text-body shadow-md">
       <p className="mb-1.5 font-medium text-popover-foreground">{row.label}</p>
       <div className="flex flex-col gap-1">
         <TooltipRow
@@ -128,7 +133,7 @@ function MetricSelect({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <label className="text-sm text-muted-foreground" htmlFor={id}>
+      <label className="text-body text-muted-foreground" htmlFor={id}>
         {legend}
       </label>
       <Select value={value} onValueChange={(next) => onChange(next as DashboardMetricKey)}>
@@ -155,7 +160,7 @@ function PanelHeading({
   mark: "bar" | "line";
 }) {
   return (
-    <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
+    <h3 className="flex items-center gap-2 text-body font-medium text-foreground">
       <span
         aria-hidden="true"
         className={mark === "bar" ? "inline-block h-3 w-2 rounded-sm" : "inline-block h-0.5 w-4 rounded-full"}
@@ -181,7 +186,7 @@ function TrendTable({
 }) {
   return (
     <div className="max-h-[26rem] overflow-y-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-body">
         <caption className="sr-only">
           Valores diários de {barDefinition.label} e {lineDefinition.label} no período
         </caption>
@@ -245,8 +250,14 @@ export function TrendChart({
   const [barKey, setBarKey] = useState<DashboardMetricKey>("spendCents");
   const [lineKey, setLineKey] = useState<DashboardMetricKey>("roasRatio");
   const [showTable, setShowTable] = useState(false);
+  const [desenhado, setDesenhado] = useState(false);
+  const reduzido = useReducedMotion();
   const idPrefix = useId();
   const syncId = `${idPrefix}-tendencia`;
+
+  // A linha nao tem onAnimationEnd proprio: as duas series comecam juntas e tem
+  // a mesma duracao, entao o fim da barra fecha o desenho das duas.
+  const desenhando = !reduzido && !desenhado;
 
   const barDefinition = metricDefinition(barKey);
   const lineDefinition = metricDefinition(lineKey);
@@ -319,7 +330,9 @@ export function TrendChart({
                   fill="var(--color-chart-1)"
                   maxBarSize={24}
                   radius={[4, 4, 0, 0]}
-                  isAnimationActive={false}
+                  isAnimationActive={desenhando}
+                  animationDuration={DRAW_MS}
+                  onAnimationEnd={() => setDesenhado(true)}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -370,7 +383,8 @@ export function TrendChart({
                   // de virar uma reta que ninguem mediu.
                   activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--color-card)" }}
                   connectNulls={false}
-                  isAnimationActive={false}
+                  isAnimationActive={desenhando}
+                  animationDuration={DRAW_MS}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -381,7 +395,7 @@ export function TrendChart({
       {/* A serie termina no ultimo dia medido, nao no fim do periodo escolhido.
           Sem esta linha o corte pareceria periodo curto; com ela fica explicito
           que o que falta e ingestao, e nao resultado zerado. */}
-      <p className="text-sm text-muted-foreground">{coverageLabel}</p>
+      <p className="text-body text-muted-foreground">{coverageLabel}</p>
     </div>
   );
 }

@@ -25,7 +25,7 @@ export type AccountOption = {
 // de enxergar um ponto vermelho, e o vermelho aqui colidiria com o vermelho de
 // piora dos KPIs, que quer dizer outra coisa.
 function DisconnectedTag() {
-  return <span className="ml-2 text-xs whitespace-nowrap text-muted-foreground">desconectada</span>;
+  return <span className="ml-2 text-label whitespace-nowrap text-muted-foreground">desconectada</span>;
 }
 
 export function AccountSelector({ accounts }: { accounts: readonly AccountOption[] }) {
@@ -35,7 +35,7 @@ export function AccountSelector({ accounts }: { accounts: readonly AccountOption
   const selected = accounts.find((account) => account.id === selectedId);
 
   if (accounts.length === 0) {
-    return <span className="text-sm text-muted-foreground">Nenhuma conta conectada</span>;
+    return <span className="text-body text-muted-foreground">Nenhuma conta conectada</span>;
   }
 
   return (

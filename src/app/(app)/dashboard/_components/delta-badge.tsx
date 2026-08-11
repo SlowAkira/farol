@@ -21,7 +21,7 @@ export function DeltaBadge({ comparison }: { comparison: MetricComparison }) {
 
   return (
     <p
-      className={cn("flex items-center gap-1 text-sm font-medium", TONE_CLASS[tone])}
+      className={cn("flex items-center gap-1 text-body font-medium", TONE_CLASS[tone])}
       title={delta.title}
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" />

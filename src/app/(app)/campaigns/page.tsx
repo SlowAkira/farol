@@ -2,6 +2,7 @@ import { Inbox, Unplug } from "lucide-react";
 import { Suspense, type ReactNode } from "react";
 import { BlockBoundary } from "@/components/block-boundary";
 import { EmptyState } from "@/components/empty-state";
+import { Reveal } from "@/components/reveal";
 import { Card, CardContent } from "@/components/ui/card";
 import { resolveCampaignSort } from "@/lib/campaigns/sort";
 import { isDisconnected, listDashboardAccounts } from "@/lib/db/accounts";
@@ -20,7 +21,7 @@ function Shell({ subtitulo, children }: { subtitulo?: string; children: ReactNod
   return (
     <div className="space-y-8">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Campanhas</h1>
+        <h1 className="text-section font-semibold">Campanhas</h1>
         {subtitulo ? <p className="text-muted-foreground">{subtitulo}</p> : null}
       </header>
       {children}
@@ -110,17 +111,19 @@ export default async function CampaignsPage({
       {/* Fronteira de erro e Suspense pelo mesmo motivo do dashboard: a consulta
           que falha derruba o cartao, nao a pagina, e o cabecalho com conta e
           periodo continua na tela enquanto a tabela carrega. */}
-      <BlockBoundary titulo="Não foi possível carregar as campanhas">
-        <Suspense fallback={<CampaignsTableSkeleton />}>
-          <CampaignsTable
-            accountId={accountId}
-            currency={account.currency}
-            period={period}
-            sort={sort}
-            params={toQuery(params)}
-          />
-        </Suspense>
-      </BlockBoundary>
+      <Reveal>
+        <BlockBoundary titulo="Não foi possível carregar as campanhas">
+          <Suspense fallback={<CampaignsTableSkeleton />}>
+            <CampaignsTable
+              accountId={accountId}
+              currency={account.currency}
+              period={period}
+              sort={sort}
+              params={toQuery(params)}
+            />
+          </Suspense>
+        </BlockBoundary>
+      </Reveal>
     </Shell>
   );
 }

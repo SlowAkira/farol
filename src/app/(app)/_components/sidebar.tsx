@@ -20,7 +20,10 @@ export function Sidebar() {
     // Abaixo do `md` a logo e os links dividem uma faixa horizontal, para nao
     // gastar altura de tela num celular; do `md` para cima e a coluna de sempre.
     <aside className="flex items-center gap-4 border-b border-sidebar-border bg-sidebar p-4 text-sidebar-foreground md:h-screen md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0">
-      <span className="text-lg font-semibold text-brand-amber md:mb-8">Farol</span>
+      {/* Logo em cor de texto, nao em cor de marca nem de acento: o violeta e
+          reservado ao que responde a cursor e teclado, e o ambar virou cor de
+          alerta. O logo nao e nenhum dos dois. */}
+      <span className="text-lead font-semibold md:mb-8">Farol</span>
       <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto md:flex-none md:flex-col md:overflow-visible">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
@@ -31,7 +34,7 @@ export function Sidebar() {
               href={item.href}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                "transition-interactive rounded-md px-3 py-2 text-body hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 // brand-link, e nao primary: o roxo cheio da marca sobre o
                 // `bg-primary/10` do tema escuro dava 2,9:1, abaixo de AA. O
                 // token de link ja e o roxo calibrado para texto em cada tema.

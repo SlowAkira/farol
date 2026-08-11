@@ -28,9 +28,12 @@ function BlockErrorCard({ titulo, onReset }: { titulo: string; onReset: () => vo
   return (
     <Card>
       <CardContent>
+        {/* Critico, e nao alerta: o bloco nao carregou. Conta desconectada
+            (que segue mostrando o historico ja coletado) e degradacao e fica no
+            ambar; aqui nao ha o que mostrar. */}
         <EmptyState
           icon={TriangleAlert}
-          tone="alerta"
+          tone="critico"
           titulo={titulo}
           descricao="Os outros blocos do painel continuam válidos. Tentar de novo recarrega só os dados desta seção."
           acao={

@@ -1,3 +1,4 @@
+import { MetricValue } from "@/components/metric-value";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMetric } from "@/lib/format";
 import { metricUnavailability } from "@/lib/metrics/availability";
@@ -33,14 +34,17 @@ export function KpiCard({
   return (
     <Card className="gap-0 py-6">
       <CardContent className="flex flex-col gap-3 px-6">
-        <h3 className="text-sm font-medium text-muted-foreground">{definition.label}</h3>
+        <h3 className="text-body font-medium text-muted-foreground">{definition.label}</h3>
 
         {/* title carrega o valor exato: a tela mostra "R$ 1,2 mi", o title mostra
-            o centavo. Numero grande fica em figura proporcional, sem tabular-nums,
-            que so serve para coluna que precisa alinhar. */}
-        <p className="text-3xl font-semibold tracking-tight" title={value.title}>
-          {value.display}
-        </p>
+            o centavo. */}
+        <MetricValue
+          value={comparison.current}
+          unit={definition.unit}
+          currency={currency}
+          display={value.display}
+          title={value.title}
+        />
 
         <DeltaBadge comparison={comparison} />
 

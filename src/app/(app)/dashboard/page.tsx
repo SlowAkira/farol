@@ -2,6 +2,7 @@ import { Inbox, Unplug } from "lucide-react";
 import { Suspense, type ReactNode } from "react";
 import { BlockBoundary } from "@/components/block-boundary";
 import { EmptyState } from "@/components/empty-state";
+import { Reveal } from "@/components/reveal";
 import { Card, CardContent } from "@/components/ui/card";
 import { isDisconnected, listDashboardAccounts } from "@/lib/db/accounts";
 import { getCampaignRoster } from "@/lib/db/campaigns";
@@ -25,7 +26,7 @@ function Shell({ subtitulo, children }: { subtitulo?: string; children: ReactNod
   return (
     <div className="space-y-10">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-section font-semibold">Dashboard</h1>
         {subtitulo ? <p className="text-muted-foreground">{subtitulo}</p> : null}
       </header>
       {children}
@@ -127,23 +128,32 @@ export default async function DashboardPage({
   // derruba so o seu cartao, e os outros dois seguem mostrando dado correto.
   return (
     <Shell subtitulo={periodoLabel}>
-      <BlockBoundary titulo="Não foi possível carregar os indicadores">
-        <Suspense fallback={<KpiRowSkeleton />}>
-          <KpiRow {...section} />
-        </Suspense>
-      </BlockBoundary>
+      {/* Reveal por fora do Suspense, e nao por dentro: o esqueleto nao anima
+          entrada, e envolver o fallback faria o bloco deslizar duas vezes --
+          uma ao aparecer o esqueleto, outra ao chegar o dado. */}
+      <Reveal>
+        <BlockBoundary titulo="Não foi possível carregar os indicadores">
+          <Suspense fallback={<KpiRowSkeleton />}>
+            <KpiRow {...section} />
+          </Suspense>
+        </BlockBoundary>
+      </Reveal>
 
-      <BlockBoundary titulo="Não foi possível carregar a evolução">
-        <Suspense fallback={<TrendSectionSkeleton />}>
-          <TrendSection {...section} />
-        </Suspense>
-      </BlockBoundary>
+      <Reveal>
+        <BlockBoundary titulo="Não foi possível carregar a evolução">
+          <Suspense fallback={<TrendSectionSkeleton />}>
+            <TrendSection {...section} />
+          </Suspense>
+        </BlockBoundary>
+      </Reveal>
 
-      <BlockBoundary titulo="Não foi possível carregar as campanhas">
-        <Suspense fallback={<TopCampaignsSkeleton />}>
-          <TopCampaigns {...section} roster={roster} />
-        </Suspense>
-      </BlockBoundary>
+      <Reveal>
+        <BlockBoundary titulo="Não foi possível carregar as campanhas">
+          <Suspense fallback={<TopCampaignsSkeleton />}>
+            <TopCampaigns {...section} roster={roster} />
+          </Suspense>
+        </BlockBoundary>
+      </Reveal>
     </Shell>
   );
 }

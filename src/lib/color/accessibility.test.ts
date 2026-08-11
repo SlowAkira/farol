@@ -37,11 +37,24 @@ function superficie(tema: ThemeName, fundo: Superficie): Rgb {
 
 const NAV_ATIVO: Superficie = { sobre: "--sidebar", cor: "--primary", opacidade: 0.1 };
 
+// O icone de alerta nao fica sobre o cartao: fica sobre um disco da propria cor
+// a 10% (`bg-alert-warning/10` em EmptyState), que e mais claro no tema claro e
+// mais escuro no escuro -- nos dois casos, mais perto do icone do que o cartao.
+// Medir contra o cartao superestimava o contraste: o ambar anterior dava 3,05:1
+// ali e 2,75:1 aqui, que e onde ele e realmente desenhado.
+const DISCO_AVISO: Superficie = { sobre: "--card", cor: "--alert-warning", opacidade: 0.1 };
+const DISCO_CRITICO: Superficie = { sobre: "--card", cor: "--alert-critical", opacidade: 0.1 };
+
 // Só entra par que a interface realmente desenha. Token declarado e nunca
 // renderizado (o `--destructive` do shadcn, por exemplo) ficaria de fora de
 // proposito: a lista mede a tela, nao o arquivo.
 const TEXTO: readonly Par[] = [
-  { frente: "--foreground", fundo: "--background", minimo: AA_TEXT, onde: "texto da pagina" },
+  {
+    frente: "--foreground",
+    fundo: "--background",
+    minimo: AA_TEXT,
+    onde: "texto da pagina e logo na landing",
+  },
   { frente: "--card-foreground", fundo: "--card", minimo: AA_TEXT, onde: "texto do cartao" },
   {
     frente: "--muted-foreground",
@@ -103,7 +116,7 @@ const TEXTO: readonly Par[] = [
     frente: "--sidebar-foreground",
     fundo: "--sidebar",
     minimo: AA_TEXT,
-    onde: "item de navegacao",
+    onde: "item de navegacao e logo na sidebar",
   },
   {
     frente: "--brand-link",
@@ -129,14 +142,25 @@ const NAO_TEXTO: readonly Par[] = [
   { frente: "--chart-1", fundo: "--card", minimo: AA_NON_TEXT, onde: "serie de barras" },
   { frente: "--chart-2", fundo: "--card", minimo: AA_NON_TEXT, onde: "serie de linha" },
   {
-    frente: "--brand-amber",
-    fundo: "--card",
+    frente: "--alert-warning",
+    fundo: DISCO_AVISO,
     minimo: AA_NON_TEXT,
-    onde: "icone de alerta no cartao",
+    onde: "icone de alerta de degradacao",
   },
-  { frente: "--brand-amber", fundo: "--sidebar", minimo: AA_NON_TEXT, onde: "logo" },
+  {
+    frente: "--alert-critical",
+    fundo: DISCO_CRITICO,
+    minimo: AA_NON_TEXT,
+    onde: "icone de alerta de falha",
+  },
   { frente: "--ring", fundo: "--background", minimo: AA_NON_TEXT, onde: "anel de foco na pagina" },
   { frente: "--ring", fundo: "--card", minimo: AA_NON_TEXT, onde: "anel de foco sobre cartao" },
+  {
+    frente: "--ring",
+    fundo: "--popover",
+    minimo: AA_NON_TEXT,
+    onde: "anel de foco em item de menu",
+  },
   {
     frente: "--sidebar-ring",
     fundo: "--sidebar",

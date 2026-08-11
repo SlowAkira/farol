@@ -39,6 +39,13 @@ const VIEWPORTS = [
 const THEME_STORAGE_KEY = "theme";
 const NAVIGATION_TIMEOUT_MS = 60_000;
 
+// As rotas do grupo (app) passaram a exigir sessao (src/middleware.ts). Sem
+// entrar, as tres viravam redirecionamento para a landing e o script fotografava
+// a mesma tela de login quatro vezes -- com nome de dashboard, campanhas e
+// alertas. Entrar pelo botao de demo, uma vez por contexto, e o que faz o print
+// mostrar o painel de verdade.
+const BOTAO_DEMO = "Ver modo demo";
+
 type Resultado = {
   readonly arquivo: string;
   readonly transbordo: number;
@@ -75,6 +82,15 @@ async function transbordoHorizontal(page: Page): Promise<number> {
     const { scrollWidth, clientWidth } = document.documentElement;
     return Math.max(0, scrollWidth - clientWidth);
   });
+}
+
+// Falha aqui e erro, e nao aviso: um script que segue em frente sem sessao
+// entrega 24 prints da tela de login com nome de painel, que e pior do que nao
+// entregar print nenhum.
+async function entrarNoModoDemo(page: Page): Promise<void> {
+  await page.goto(BASE_URL, { waitUntil: "networkidle", timeout: NAVIGATION_TIMEOUT_MS });
+  await page.getByRole("button", { name: BOTAO_DEMO }).click();
+  await page.waitForURL(`${BASE_URL}/dashboard`, { timeout: NAVIGATION_TIMEOUT_MS });
 }
 
 async function capturar(page: Page, caminho: string, arquivo: string): Promise<Resultado> {
@@ -114,7 +130,17 @@ async function main(): Promise<void> {
   try {
     for (const tema of TEMAS) {
       for (const viewport of VIEWPORTS) {
-        const context = await browser.newContext({ viewport, deviceScaleFactor: 2 });
+        // reducedMotion, e nao so `animations: "disabled"` do screenshot: a
+        // entrada dos blocos e disparada por IntersectionObserver, que nao roda
+        // para o que nunca entrou na janela -- e o print e fullPage. Sem isso os
+        // cartoes abaixo da dobra sairiam em opacidade zero. De quebra, cada
+        // print passa a ser a prova de que o caminho de movimento reduzido
+        // entrega a mesma tela final.
+        const context = await browser.newContext({
+          viewport,
+          deviceScaleFactor: 2,
+          reducedMotion: "reduce",
+        });
         await context.addInitScript(
           ([chave, valor]: readonly [string, string]) => {
             window.localStorage.setItem(chave, valor);
@@ -123,6 +149,7 @@ async function main(): Promise<void> {
         );
 
         const page = await context.newPage();
+        await entrarNoModoDemo(page);
 
         for (const rota of ROTAS) {
           // Largura com zero a esquerda so para o nome ordenar na mesma ordem em

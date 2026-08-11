@@ -23,18 +23,45 @@ alertas automáticos de anomalia.
 
 - Tema claro e escuro, ambos suportados, com toggle acessível. Escuro é o
   padrão. Nenhuma cor hardcoded em componente: tudo via tokens CSS do shadcn.
-- Cor de marca: roxo, usada em botões, links e elementos de navegação. Paleta
-  definida como variáveis com tons de hover, ativo e desabilitado, validados
-  para contraste AA nos dois temas.
-- Cor de acento: âmbar, reservada ao logo, ao ícone de alerta e a nada mais.
-  É a assinatura visual do Farol e não pode virar cor de botão comum.
+- Superfície: um tom escuro quase neutro como base, com elevação feita por
+  camadas mais claras, nunca por sombra pesada. Três níveis, e só três:
+  `--surface-base` (fundo da página e sidebar), `--surface-card` (cartão) e
+  `--surface-raised` (popover, tooltip, menu). O tema claro segue a mesma
+  lógica invertida: a elevação caminha para o branco.
+- Cor de marca: violeta dessaturado, usado só onde há interação — navegação
+  ativa, botão primário, anel de foco e link. Nada de roxo vibrante, e nada de
+  marca em elemento que não responde ao cursor nem ao teclado. Tons de hover,
+  ativo e desabilitado definidos como variáveis e validados para AA nos dois
+  temas.
+- Âmbar e vermelho são cores de alerta, e só isso: `--alert-warning` para
+  degradação e `--alert-critical` para falha. Não são cor de logo, de botão nem
+  de série. O logo usa a cor de texto primário.
+- Cores de estado (verde de melhora, vermelho de piora) são independentes da
+  marca e do alerta, e nunca são o único sinal: sempre acompanhadas de seta ou
+  sinal, para funcionar em daltonismo.
+- Paleta de dados independente da marca, seguindo a skill `dataviz`: oito
+  matizes em ordem fixa — azul, laranja, aqua, amarelo, magenta, verde, violeta,
+  vermelho — atribuídas em sequência e nunca cicladas. O painel desenha no
+  máximo duas séries por vez, então só os dois primeiros slots existem como
+  token. Um terceiro slot já nasce sendo aqua; escolher a cor no olho é o que a
+  ordem fixa existe para impedir.
 - Densidade espaçada: cartões grandes, números em destaque, generoso em
   espaço em branco. Preferir legibilidade a caber mais dado por tela.
 - Hierarquia do dashboard: KPIs do período no topo, gráfico de evolução no
   meio, tabela de campanhas embaixo.
-- Cores de estado (verde de melhora, vermelho de piora) são independentes da
-  cor de marca e nunca são o único sinal: sempre acompanhadas de seta ou
-  sinal, para funcionar em daltonismo.
+- Tipografia Geist via `next/font`, com escala explícita de seis tamanhos em
+  token (`--text-label`, `--text-body`, `--text-lead`, `--text-section`,
+  `--text-metric`, `--text-display`) e nenhum sétimo. `tabular-nums` só onde
+  número alinha em coluna: célula de tabela e tick de eixo. Valor grande e
+  isolado fica em figura proporcional, com largura mínima reservada no
+  container para o layout não empurrar quando o número muda de tamanho.
+- Movimento discreto e funcional, entre 150ms e 300ms, com `--ease-soft`:
+  cartões entram com 8px de deslocamento e opacidade ao chegar na viewport, uma
+  única vez; valores de KPI contam de zero; o gráfico desenha as séries uma vez
+  ao carregar; skeleton com shimmer; hover e foco com transição curta. Tudo isso
+  respeita `prefers-reduced-motion` — com a preferência ativa nada anima e os
+  valores aparecem direto. O estado final tem que ser idêntico nos dois
+  caminhos: animação nunca é o que torna o conteúdo visível.
 
 ## Estilo
 
@@ -45,6 +72,11 @@ alertas automáticos de anomalia.
 ## Testes
 
 - Lógica de métricas, ingestão e regras de alerta: teste unitário obrigatório.
+- Contraste e daltonismo são cobrados pelo CI: `src/lib/color/accessibility.test.ts`
+  lê o `globals.css` de verdade e mede cada par sobre a superfície em que ele é
+  de fato desenhado — inclusive as compostas (`bg-primary/10` da navegação
+  ativa, disco `/10` do ícone de alerta). Token novo que reprova se ajusta; o
+  teste não.
 - UI não tem teste unitário; um único fluxo crítico coberto por Playwright.
 - `npm run shots` fotografa landing, dashboard, campanhas e alertas nos dois
   temas em 375px, 768px e 1440px, e grava em `.screenshots/` (fora do git).
