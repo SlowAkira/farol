@@ -42,3 +42,14 @@ Em produção, `POST /api/cron/sync` sincroniza todas as contas conectadas, trê
 em paralelo. A rota exige `Authorization: Bearer $CRON_SECRET` e também aceita
 `GET`, que é como o Vercel Cron dispara — o agendamento diário das 9h UTC está
 em `vercel.json`. Cada sincronização sai como uma linha de JSON no log.
+
+## O que ficou de fora e por quê
+
+**Banco separado para preview.** Preview e produção apontam para o mesmo banco
+Neon. Aceitável hoje porque os dados são mock e regeneráveis, e montar branching
+de banco agora custaria mais do que resolve. O risco é concreto e conhecido:
+`npm run build` roda `prisma migrate deploy`, e todo deployment faz build — uma
+migration destrutiva num PR é aplicada em produção assim que o preview constrói,
+antes de qualquer revisão. Enquanto for assim, migration que dropa coluna ou
+tabela precisa de branch de banco própria ou de ser dividida em passos
+compatíveis com o schema anterior.
