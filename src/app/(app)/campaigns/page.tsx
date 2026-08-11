@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Reveal } from "@/components/reveal";
 import { Card, CardContent } from "@/components/ui/card";
 import { resolveCampaignSort } from "@/lib/campaigns/sort";
+import { formatPeriod } from "@/lib/format";
 import { isDisconnected, listDashboardAccounts } from "@/lib/db/accounts";
 import { getAccountLastDataDate } from "@/lib/db/insights";
 import {
@@ -87,7 +88,7 @@ export default async function CampaignsPage({
   }
 
   const period = resolvePeriod(params, periodAnchor(await getAccountLastDataDate(accountId)));
-  const periodoLabel = `${account.name} · ${period.since} a ${period.until}`;
+  const periodoLabel = `${account.name} · ${formatPeriod(period.since, period.until)}`;
 
   if (isDisconnected(account)) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -255,9 +255,22 @@ export function TrendChart({
   const idPrefix = useId();
   const syncId = `${idPrefix}-tendencia`;
 
-  // A linha nao tem onAnimationEnd proprio: as duas series comecam juntas e tem
-  // a mesma duracao, entao o fim da barra fecha o desenho das duas.
   const desenhando = !reduzido && !desenhado;
+
+  // Trava por tempo, e nao pelo `onAnimationEnd` da barra. Aquele callback so
+  // chega se a serie desenhar retangulo, e metrica toda nula (CPA num periodo
+  // sem conversao) nao desenha nenhum -- ali a trava nunca fechava e cada troca
+  // de metrica redesenhava. Hoje a barra abre em Gasto, que nunca e nulo num dia
+  // medido, entao o callback sempre vinha; mas a garantia ficava presa a qual
+  // metrica e o padrao, que e decidido longe daqui.
+  useEffect(() => {
+    if (reduzido || desenhado) {
+      return;
+    }
+
+    const relogio = setTimeout(() => setDesenhado(true), DRAW_MS);
+    return () => clearTimeout(relogio);
+  }, [reduzido, desenhado]);
 
   const barDefinition = metricDefinition(barKey);
   const lineDefinition = metricDefinition(lineKey);
@@ -332,7 +345,6 @@ export function TrendChart({
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={desenhando}
                   animationDuration={DRAW_MS}
-                  onAnimationEnd={() => setDesenhado(true)}
                 />
               </BarChart>
             </ResponsiveContainer>

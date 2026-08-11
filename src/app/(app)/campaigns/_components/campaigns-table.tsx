@@ -18,7 +18,7 @@ import {
   type SortColumn,
 } from "@/lib/campaigns/sort";
 import { getCampaignTable } from "@/lib/db/insights";
-import { formatMetric } from "@/lib/format";
+import { formatDay, formatMetric } from "@/lib/format";
 import { metricUnavailability, SEM_INGESTAO } from "@/lib/metrics/availability";
 import { metricValues } from "@/lib/metrics/calc";
 import { CAMPAIGN_TABLE_METRICS } from "@/lib/metrics/catalog";
@@ -121,7 +121,7 @@ export async function CampaignsTable({
           <EmptyState
             icon={CalendarOff}
             titulo="Nenhuma métrica ingerida neste período"
-            descricao={`${contagem} desta conta continua${campaigns.length === 1 ? "" : "m"} registrada${campaigns.length === 1 ? "" : "s"}, mas nenhuma tem métrica entre ${period.since} e ${period.until}. Um período mais longo costuma alcançar a última veiculação.`}
+            descricao={`${contagem} desta conta continua${campaigns.length === 1 ? "" : "m"} registrada${campaigns.length === 1 ? "" : "s"}, mas nenhuma tem métrica entre ${formatDay(period.since)} e ${formatDay(period.until)}. Um período mais longo costuma alcançar a última veiculação.`}
           />
         </CardContent>
       </Card>

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import type { CampaignRoster } from "@/lib/db/campaigns";
 import { getCampaignBreakdown } from "@/lib/db/insights";
-import { formatMetric } from "@/lib/format";
+import { formatDay, formatMetric } from "@/lib/format";
 import { metricUnavailability } from "@/lib/metrics/availability";
 import { metricDefinition, type DashboardMetricKey } from "@/lib/metrics/catalog";
 import { metricValues } from "@/lib/metrics/calc";
@@ -65,7 +65,7 @@ export async function TopCampaigns({
             <EmptyState
               icon={CalendarOff}
               titulo="Nenhum gasto neste período"
-              descricao={`As campanhas desta conta não registraram gasto entre ${period.since} e ${period.until}. Um período mais longo costuma alcançar a última veiculação.`}
+              descricao={`As campanhas desta conta não registraram gasto entre ${formatDay(period.since)} e ${formatDay(period.until)}. Um período mais longo costuma alcançar a última veiculação.`}
             />
           )
         ) : (

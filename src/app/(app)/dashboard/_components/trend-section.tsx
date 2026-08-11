@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trimToLastDataDay } from "@/lib/charts/series";
 import { getDailySeries } from "@/lib/db/insights";
-import { formatDayLabel } from "@/lib/format";
+import { formatDay, formatDayLabel } from "@/lib/format";
 import { metricUnavailability } from "@/lib/metrics/availability";
 import { metricValues } from "@/lib/metrics/calc";
 import { DASHBOARD_METRICS } from "@/lib/metrics/catalog";
@@ -67,13 +67,13 @@ export async function TrendSection({
           <EmptyState
             icon={CalendarOff}
             titulo="Nenhum dia medido neste período"
-            descricao={`Ainda não há métrica ingerida entre ${period.since} e ${period.until}. A próxima sincronização preenche os dias que já fecharam.`}
+            descricao={`Ainda não há métrica ingerida entre ${formatDay(period.since)} e ${formatDay(period.until)}. A próxima sincronização preenche os dias que já fecharam.`}
           />
         ) : (
           <TrendChart
             rows={rows}
             currency={currency}
-            coverageLabel={`Dados até ${formatDayLabel(lastDataDate)}`}
+            coverageLabel={`Dados até ${formatDay(lastDataDate)}`}
           />
         )}
       </CardContent>

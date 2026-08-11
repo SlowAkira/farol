@@ -90,9 +90,75 @@ export function formatDeltaPercent(value: number): string {
   }).format(value)}%`;
 }
 
+// Rotulo de eixo e de coluna: curto e de largura constante, porque ali dezenas
+// deles ficam lado a lado. Data em prosa usa formatDay/formatPeriod abaixo.
 export function formatDayLabel(isoDate: string): string {
   const [, month, day] = isoDate.split("-");
   return `${day}/${month}`;
+}
+
+// Meses escritos a mao em vez de Intl com `month: "short"`. O ICU devolve "jul."
+// numas versoes de Node e "jul" em outras -- a mesma deriva de runtime que ja
+// obrigou a fixar minimumFractionDigits no compacto acima. Data que ganha ponto
+// final conforme a maquina nao e formato, e sorte.
+const MESES_CURTOS = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+] as const;
+
+type PartesDeData = { readonly ano: string; readonly mes: string; readonly dia: number };
+
+// Le a string YYYY-MM-DD por pedaco, sem passar por Date: data de metrica e o
+// dia no fuso da conta de anuncios (CLAUDE.md), e construir um Date so para
+// formatar reintroduz o fuso da maquina que o formato existe para evitar.
+function partesDeData(isoDate: string): PartesDeData | null {
+  const [ano, mes, dia] = isoDate.split("-");
+  const indiceDoMes = Number.parseInt(mes ?? "", 10) - 1;
+  const numeroDoDia = Number.parseInt(dia ?? "", 10);
+  const nomeDoMes = MESES_CURTOS[indiceDoMes];
+
+  if (ano === undefined || nomeDoMes === undefined || Number.isNaN(numeroDoDia)) {
+    return null;
+  }
+
+  return { ano, mes: nomeDoMes, dia: numeroDoDia };
+}
+
+// Entrada que nao e data volta como veio, em vez de virar excecao ou "NaN de
+// undefined": o ISO cru e feio, mas continua sendo verdade, e um rotulo de
+// periodo nao pode derrubar a pagina.
+export function formatDay(isoDate: string): string {
+  const partes = partesDeData(isoDate);
+  return partes === null ? isoDate : `${partes.dia} ${partes.mes}`;
+}
+
+// O ano so aparece quando o periodo cruza a virada: dentro do mesmo ano ele e
+// ruido, e entre dezembro e janeiro e a unica coisa que desfaz a ambiguidade.
+export function formatPeriod(since: string, until: string): string {
+  const inicio = partesDeData(since);
+  const fim = partesDeData(until);
+
+  if (inicio === null || fim === null) {
+    return `${since} a ${until}`;
+  }
+  if (since === until) {
+    return `${inicio.dia} ${inicio.mes}`;
+  }
+  if (inicio.ano !== fim.ano) {
+    return `${inicio.dia} ${inicio.mes} ${inicio.ano} a ${fim.dia} ${fim.mes} ${fim.ano}`;
+  }
+
+  return `${inicio.dia} ${inicio.mes} a ${fim.dia} ${fim.mes}`;
 }
 
 export type FormattedMetric = {
