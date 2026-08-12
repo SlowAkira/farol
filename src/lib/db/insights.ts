@@ -117,6 +117,71 @@ export async function getDailySeries(
   });
 }
 
+export type CampaignDailySeries = {
+  readonly campaignId: string;
+  readonly name: string;
+  readonly days: readonly DailyTotals[];
+};
+
+// getDailySeries por campanha, numa consulta so. O backtest precisa avaliar cada
+// campanha em separado em cada um dos 90 dias, e o mini grafico do alerta precisa
+// da serie da campanha que disparou -- pedir dia a dia, ou campanha a campanha,
+// seriam centenas de idas ao banco para o mesmo GROUP BY.
+//
+// So entra campanha com pelo menos um insight no intervalo, como em
+// getCampaignBreakdown: o zero-fill preenche os dias de dentro do periodo, nao
+// inventa campanha que nunca rodou nele.
+export async function getCampaignDailySeries(
+  accountId: string,
+  since: string,
+  until: string,
+): Promise<CampaignDailySeries[]> {
+  assertPeriod(since, until);
+
+  const prisma = getPrisma();
+  const grouped = await prisma.dailyInsight.groupBy({
+    by: ["campaignId", "date"],
+    where: { date: { gte: since, lte: until }, campaign: { adAccountId: accountId } },
+    _sum: SUM_SELECT,
+  });
+
+  if (grouped.length === 0) {
+    return [];
+  }
+
+  const campaignIds = [...new Set(grouped.map((row) => row.campaignId))];
+  const campaigns = await prisma.campaign.findMany({
+    where: { id: { in: campaignIds } },
+    select: { id: true, name: true },
+  });
+  const nameById = new Map(campaigns.map((campaign) => [campaign.id, campaign.name]));
+
+  const totalsByCampaign = new Map<string, Map<string, MetricTotals>>();
+  for (const row of grouped) {
+    const porData = totalsByCampaign.get(row.campaignId) ?? new Map<string, MetricTotals>();
+    porData.set(row.date, totalsFromSum(row._sum));
+    totalsByCampaign.set(row.campaignId, porData);
+  }
+
+  const daysInPeriod = daysBetween(since, until);
+
+  return campaignIds.map((campaignId) => {
+    const porData = totalsByCampaign.get(campaignId) ?? new Map<string, MetricTotals>();
+
+    return {
+      campaignId,
+      // FK garante o nome; se sumir, o id continua identificando a serie melhor
+      // do que uma string vazia identificaria.
+      name: nameById.get(campaignId) ?? campaignId,
+      days: Array.from({ length: daysInPeriod + 1 }, (_, offset) => {
+        const date = addDays(since, offset);
+        const totals = porData.get(date);
+        return { date, hasData: totals !== undefined, ...(totals ?? ZERO_TOTALS) };
+      }),
+    };
+  });
+}
+
 // Soma por campanha via groupBy, que tambem compila para GROUP BY no Postgres:
 // so entra campanha com pelo menos um insight no periodo, porque isto e a
 // listagem de quem contribuiu no periodo, nao o catalogo inteiro da conta.

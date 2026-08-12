@@ -6,6 +6,10 @@ import type { DefaultSession } from "next-auth";
 declare module "next-auth" {
   interface Session {
     user: DefaultSession["user"] & {
+      // Dono da sessao. Toda escrita de regra e de alerta entra no `where` com
+      // ele: o id do recurso viaja pela server action e e editavel por quem
+      // chama, entao a posse nunca pode ser deduzida do id sozinho.
+      id: string;
       isDemo: boolean;
     };
   }

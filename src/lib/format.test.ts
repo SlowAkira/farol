@@ -9,6 +9,7 @@ import {
   formatDelta,
   formatDeltaPercent,
   formatMetric,
+  formatMetricInline,
   formatPercent,
   formatPeriod,
   formatRatio,
@@ -173,5 +174,26 @@ describe("formatPeriod", () => {
 
   it("devolve o ISO quando uma das pontas nao e data", () => {
     expect(formatPeriod("2026-07-30", "amanha")).toBe("2026-07-30 a amanha");
+  });
+});
+
+describe("formatMetricInline", () => {
+  // Duas casas em tudo e nada abreviado: e o numero como cabe no meio de uma
+  // frase, entre o `display` (que abrevia) e o `title` (que leva razao e
+  // percentual a quatro casas) de formatMetric.
+  it("escreve dinheiro por extenso, sem abreviar", () => {
+    expect(formatMetricInline(1_840, "currency", "BRL")).toBe(formatCurrency(1_840, "BRL"));
+    expect(formatMetricInline(1_234_500, "currency", "BRL")).toBe(
+      formatCurrency(1_234_500, "BRL"),
+    );
+  });
+
+  it("leva razao e percentual a duas casas", () => {
+    expect(formatMetricInline(4.2, "ratio", "BRL")).toBe("4,20×");
+    expect(formatMetricInline(1.8, "percent", "BRL")).toBe("1,80%");
+  });
+
+  it("escreve contagem inteira", () => {
+    expect(formatMetricInline(12_345, "count", "BRL")).toBe(formatCount(12_345));
   });
 });

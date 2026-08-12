@@ -140,7 +140,14 @@
   --accent-foreground: #16161a;
   --destructive: #dc2626;
   --border: #e4e4e8;
-  --input: #dcdce2;
+  /* Borda de campo, e nao borda de layout: e ela que diz onde comeca um input ou
+     um select, e num campo de fundo transparente ela e a unica coisa que diz.
+     Por isso e o unico "cinza de linha" medido em contraste (WCAG 1.4.11, 3:1) e
+     por isso e visivelmente mais escura que --border, que so separa areas e nao
+     identifica componente nenhum. Sobre o cartao da 3,35:1, sobre o fundo da
+     pagina 3,18:1 e sobre o popover 3,50:1 -- as tres superficies em que um
+     campo aparece. */
+  --input: #888895;
   /* Anel de foco na cor da marca: foco e estado interativo, e a marca e a cor de
      estado interativo. 6,1:1 sobre o fundo da pagina, acima do 3:1 que a WCAG
      1.4.11 exige de indicador de foco. */
@@ -209,7 +216,11 @@
   --accent-foreground: #fafafa;
   --destructive: #ef4444;
   --border: #26262e;
-  --input: #2e2e38;
+  /* Espelho do claro: a borda do campo caminha para o claro em vez de para o
+     escuro. 3,44:1 sobre o cartao, 3,67:1 sobre a pagina e 3,16:1 sobre o
+     popover. O `dark:bg-input/30` que os primitivos aplicam e enfeite por cima:
+     quem identifica o campo continua sendo a borda. */
+  --input: #6b6b78;
   /* Espelho do claro: no escuro o anel precisa ser um violeta mais claro que a
      superficie, nao mais escuro (5,9:1 sobre o fundo da pagina). */
   --ring: #8f84d9;

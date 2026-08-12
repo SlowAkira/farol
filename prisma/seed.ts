@@ -1,13 +1,19 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import type { DailyInsight } from "../src/generated/prisma/browser";
 import {
   AlertComparison,
   AlertDirection,
   AlertMetric,
   AlertScope,
+  AlertStatus,
 } from "../src/generated/prisma/enums";
+import { backtestRule, type BacktestSeries } from "../src/lib/alerts/backtest";
+import { fingerprintFor, type EvaluableRule } from "../src/lib/alerts/rules";
+import { mergeSeries, type DayTotals } from "../src/lib/alerts/series";
 import { DEMO_USER_EMAIL } from "../src/lib/auth/env";
+import { addDays } from "../src/lib/dates";
 import { DEFAULT_END_DATE, generateAccount } from "../src/lib/mock/generator";
 
 // Mesma preferencia do prisma.config.ts (migrationUrl): upsert e createMany em
@@ -23,6 +29,85 @@ function connectionString(): string {
 }
 
 const DEMO_SEED = 1;
+
+// Quantos dias de feed a conta demo tem. Curto o bastante para a tela de alertas
+// caber numa leitura e longo o bastante para haver mais de um dia com disparo --
+// e sobra historico atras dele (o gerador faz 120 dias) para as janelas de 30
+// dias serem completas desde o primeiro dia simulado.
+const DIAS_DE_ALERTA = 45;
+
+// Meio-dia no fuso da conta gerada (America/Sao_Paulo). O feed agrupa pelo dia
+// no fuso da conta de anuncios, entao carimbar meia-noite UTC jogaria metade dos
+// alertas para o dia anterior na tela.
+function instanteNoDia(date: string): Date {
+  return new Date(`${date}T12:00:00-03:00`);
+}
+
+// Os insights ja estao em memoria, entao o backtest da demo nao le o banco: a
+// mesma seed gera os mesmos dias, os mesmos disparos e as mesmas datas.
+function seriesPorCampanha(insights: readonly DailyInsight[]): Map<string, DayTotals[]> {
+  const porCampanha = new Map<string, DayTotals[]>();
+
+  for (const insight of insights) {
+    const dias = porCampanha.get(insight.campaignId) ?? [];
+    dias.push({
+      date: insight.date,
+      hasData: true,
+      impressions: insight.impressions,
+      clicks: insight.clicks,
+      spendCents: insight.spendCents,
+      conversions: insight.conversions,
+      conversionValueCents: insight.conversionValueCents,
+      reach: insight.reach,
+    });
+    porCampanha.set(insight.campaignId, dias);
+  }
+
+  for (const dias of porCampanha.values()) {
+    dias.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  }
+
+  return porCampanha;
+}
+
+type AlertaDemo = {
+  ruleId: string;
+  campaignId: string | null;
+  fingerprint: string;
+  status: AlertStatus;
+  triggeredAt: Date;
+  resolvedAt: Date | null;
+  context: object;
+};
+
+// Replay do motor sobre o historico sintetico. E o mesmo backtest que o
+// formulario de regra mostra em preview: se a tela promete "teria disparado
+// nestas datas", a conta demo tem que ser exatamente essas datas.
+function alertasDaRegra(
+  rule: EvaluableRule,
+  porCampanha: ReadonlyMap<string, readonly DayTotals[]>,
+  nomeDaCampanha: ReadonlyMap<string, string>,
+  since: string,
+  until: string,
+): AlertaDemo[] {
+  const series: BacktestSeries[] =
+    rule.scope === AlertScope.ACCOUNT
+      ? [{ target: null, days: mergeSeries([...porCampanha.values()]) }]
+      : [...porCampanha.entries()].map(([campaignId, days]) => ({
+          target: { campaignId, campaignName: nomeDaCampanha.get(campaignId) ?? campaignId },
+          days,
+        }));
+
+  return backtestRule({ rule, series, since, until }).firings.map((firing) => ({
+    ruleId: rule.id,
+    campaignId: firing.target?.campaignId ?? null,
+    fingerprint: fingerprintFor(rule.id, firing.target?.campaignId ?? null, rule.direction),
+    status: firing.resolvedOn === null ? AlertStatus.OPEN : AlertStatus.RESOLVED,
+    triggeredAt: instanteNoDia(firing.date),
+    resolvedAt: firing.resolvedOn === null ? null : instanteNoDia(firing.resolvedOn),
+    context: firing.context,
+  }));
+}
 
 async function main(): Promise<void> {
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: connectionString() }) });
@@ -102,9 +187,38 @@ async function main(): Promise<void> {
         windowDays: 7,
       },
       {
-        // A unica em ABSOLUTE_THRESHOLD, para o dado de demonstracao exercitar
-        // os dois eixos de comparacao. Limiar em centavos, como todo dinheiro
-        // no projeto: R$ 60,00 de custo por conversao.
+        // A mesma degradacao de camp_leads vista com janela curta: dispara no
+        // meio de julho e fecha nove dias depois, quando a media de 7 dias volta
+        // ao patamar. E o alerta resolvido da conta demo.
+        name: "Custo por conversão subiu na semana",
+        userId: demoUser.id,
+        adAccountId: accountId,
+        metric: AlertMetric.CPA,
+        comparison: AlertComparison.PCT_CHANGE,
+        direction: AlertDirection.ABOVE,
+        scope: AlertScope.CAMPAIGN,
+        threshold: 20 * 100,
+        windowDays: 7,
+      },
+      {
+        // frequencyGrowth dos perfis faz a frequencia subir ao longo dos 120
+        // dias: esta regra pega o momento em que uma campanha passa de 3,5
+        // impressoes por pessoa e nao volta mais. E o alerta antigo e ainda
+        // aberto, que a tela usa para mostrar o estado silenciado.
+        name: "Frequência acima de 3,5 na quinzena",
+        userId: demoUser.id,
+        adAccountId: accountId,
+        metric: AlertMetric.FREQUENCY,
+        comparison: AlertComparison.ABSOLUTE_THRESHOLD,
+        direction: AlertDirection.ABOVE,
+        scope: AlertScope.CAMPAIGN,
+        threshold: 350,
+        windowDays: 14,
+      },
+      {
+        // A unica de dinheiro em ABSOLUTE_THRESHOLD, para o dado de demonstracao
+        // exercitar os dois eixos de comparacao. Limiar em centavos, como todo
+        // dinheiro no projeto: R$ 60,00 de custo por conversao.
         name: "Custo por conversão acima de R$ 60",
         userId: demoUser.id,
         adAccountId: accountId,
@@ -117,17 +231,50 @@ async function main(): Promise<void> {
       },
     ];
 
+    const regrasGravadas = [];
     for (const rule of alertRules) {
-      await prisma.alertRule.upsert({
-        where: { userId_name: { userId: rule.userId, name: rule.name } },
-        create: rule,
-        update: rule,
-      });
+      regrasGravadas.push(
+        await prisma.alertRule.upsert({
+          where: { userId_name: { userId: rule.userId, name: rule.name } },
+          create: rule,
+          update: rule,
+        }),
+      );
     }
+
+    const porCampanha = seriesPorCampanha(insights);
+    const nomeDaCampanha = new Map(campaigns.map((campaign) => [campaign.id, campaign.name]));
+    const alertas = regrasGravadas.flatMap((rule) =>
+      alertasDaRegra(
+        rule,
+        porCampanha,
+        nomeDaCampanha,
+        addDays(DEFAULT_END_DATE, -(DIAS_DE_ALERTA - 1)),
+        DEFAULT_END_DATE,
+      ),
+    );
+
+    // Um aberto vira silenciado para a tela de alertas mostrar os tres estados.
+    // O escolhido e o mais antigo: silenciar e o que se faz com o aviso que ja
+    // foi visto e nao vai ser resolvido hoje.
+    const abertos = alertas
+      .filter((alerta) => alerta.status === AlertStatus.OPEN)
+      .sort((a, b) => a.triggeredAt.getTime() - b.triggeredAt.getTime());
+    if (abertos.length > 1) {
+      abertos[0].status = AlertStatus.MUTED;
+    }
+
+    // Apagar e recriar, e nao upsert: o alerta nao tem chave natural estavel
+    // (dois episodios da mesma condicao compartilham fingerprint), e o backtest
+    // e deterministico -- rodar o seed de novo tem que devolver o mesmo feed, nao
+    // uma segunda copia dele.
+    await prisma.alert.deleteMany({ where: { rule: { adAccountId: accountId } } });
+    await prisma.alert.createMany({ data: alertas });
 
     console.log(
       `Seed ok: usuario demo ${demoUser.email}, conta ${accountId}, ` +
-        `${campaigns.length} campanhas, ${insights.length} insights, ${alertRules.length} regras de alerta.`,
+        `${campaigns.length} campanhas, ${insights.length} insights, ` +
+        `${alertRules.length} regras de alerta, ${alertas.length} alertas.`,
     );
   } finally {
     await prisma.$disconnect();

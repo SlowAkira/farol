@@ -1,37 +1,48 @@
 import { sparklineGeometry } from "@/lib/charts/sparkline";
+import { cn } from "@/lib/utils";
 
-const WIDTH = 96;
-const HEIGHT = 28;
+const LARGURA_PADRAO = 96;
+const ALTURA_PADRAO = 28;
 const PADDING = 3;
 
 // SVG estatico montado no servidor: a sparkline nao tem hover nem tooltip, entao
-// nao ha motivo para arrastar Recharts (e um bundle client) ate o cartao de KPI.
-// A geometria vem de src/lib/charts, porque componente nao divide numero.
+// nao ha motivo para arrastar Recharts (e um bundle client) ate o cartao. A
+// geometria vem de src/lib/charts, porque componente nao divide numero.
+//
+// A cor sai de `currentColor`: no cartao de KPI o traco e cinza, porque ali ele
+// e contexto do numero ao lado; no cartao de alerta ele e a cor da serie, porque
+// ali o traco e o dado. Quem posiciona escolhe, passando `className`.
+//
+// O tamanho vem em pixel do viewBox, e nao de classe utilitaria, para o desenho
+// nunca esticar: sparkline distorcida muda a inclinacao da linha, que e a unica
+// coisa que ela tem para dizer.
 export function Sparkline({
   values,
   label,
+  width = LARGURA_PADRAO,
+  height = ALTURA_PADRAO,
+  className,
 }: {
   values: readonly (number | null)[];
   label: string;
+  width?: number;
+  height?: number;
+  className?: string;
 }) {
-  const geometry = sparklineGeometry(values, {
-    width: WIDTH,
-    height: HEIGHT,
-    padding: PADDING,
-  });
+  const geometry = sparklineGeometry(values, { width, height, padding: PADDING });
 
   if (!geometry) {
     // Mantem a altura do bloco: sem isso o cartao sem historico encolhe e a
     // linha de KPIs fica desalinhada.
-    return <div className="h-7 w-24" aria-hidden="true" />;
+    return <div style={{ width, height }} aria-hidden="true" />;
   }
 
   return (
     <svg
       viewBox={`0 0 ${geometry.width} ${geometry.height}`}
-      width={WIDTH}
-      height={HEIGHT}
-      className="h-7 w-24 text-muted-foreground"
+      width={width}
+      height={height}
+      className={cn("text-muted-foreground", className)}
       role="img"
       aria-label={label}
       focusable="false"

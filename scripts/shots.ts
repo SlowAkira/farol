@@ -18,6 +18,11 @@ const ROTAS = [
   { nome: "dashboard", caminho: "/dashboard" },
   { nome: "campanhas", caminho: "/campaigns" },
   { nome: "alertas", caminho: "/alerts" },
+  { nome: "regras", caminho: "/alerts/rules" },
+  // A tela de regra nova entra na lista porque e a unica que mostra o preview de
+  // backtest, que e o bloco mais denso do painel: se algum layout vaza no
+  // celular, vaza ali.
+  { nome: "regra-nova", caminho: "/alerts/rules/new" },
 ] as const;
 
 // O valor guardado e o que o next-themes le do localStorage (`attribute="class"`,

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { CampaignObjective, CampaignStatus, Platform } from "@/generated/prisma/enums";
-import { computeMetrics, type MetricTotals } from "@/lib/metrics/calc";
+import { computeMetrics, sumTotals, type MetricTotals } from "@/lib/metrics/calc";
 import { createTestDatabase, resetTables, type TestDatabase } from "@/test/db";
 
 const wiring = vi.hoisted(() => ({ prisma: null as unknown }));
@@ -10,6 +10,7 @@ const {
   getAccountLastDataDate,
   getAccountTotals,
   getCampaignBreakdown,
+  getCampaignDailySeries,
   getCampaignLastDataDate,
   getCampaignTable,
   getDailySeries,
@@ -98,20 +99,6 @@ function totalsOf(day: DailyTotals): MetricTotals {
     conversionValueCents: day.conversionValueCents,
     reach: day.reach,
   };
-}
-
-function sumTotals(rows: readonly MetricTotals[]): MetricTotals {
-  return rows.reduce<MetricTotals>(
-    (acc, row) => ({
-      impressions: acc.impressions + row.impressions,
-      clicks: acc.clicks + row.clicks,
-      spendCents: acc.spendCents + row.spendCents,
-      conversions: acc.conversions + row.conversions,
-      conversionValueCents: acc.conversionValueCents + row.conversionValueCents,
-      reach: acc.reach + row.reach,
-    }),
-    { impressions: 0, clicks: 0, spendCents: 0, conversions: 0, conversionValueCents: 0, reach: 0 },
-  );
 }
 
 beforeAll(async () => {
@@ -525,5 +512,81 @@ describe("getPreviousPeriod", () => {
 
   it("derruba com periodo invertido", () => {
     expect(() => getPreviousPeriod("2026-07-07", "2026-07-01")).toThrow(RangeError);
+  });
+});
+
+describe("getCampaignDailySeries", () => {
+  it("devolve uma serie zero-filled por campanha", async () => {
+    const accountId = await seedAccount();
+    const campanhaA = await seedCampaign(accountId, "camp_a", { name: "A" });
+    const campanhaB = await seedCampaign(accountId, "camp_b", { name: "B" });
+    const rows = insightRows([campanhaA, campanhaB], ["2026-06-01", "2026-06-03"]);
+    await db.prisma.dailyInsight.createMany({ data: rows });
+
+    const series = await getCampaignDailySeries(accountId, "2026-06-01", "2026-06-03");
+    const porNome = new Map(series.map((serie) => [serie.name, serie]));
+
+    expect(series).toHaveLength(2);
+    // Tres dias em cada, inclusive o do meio, que nao tem insight nenhum.
+    expect(porNome.get("A")?.days.map((day) => day.date)).toEqual([
+      "2026-06-01",
+      "2026-06-02",
+      "2026-06-03",
+    ]);
+    expect(porNome.get("A")?.days.map((day) => day.hasData)).toEqual([true, false, true]);
+  });
+
+  it("soma no dia certo de cada campanha", async () => {
+    const accountId = await seedAccount();
+    const campanha = await seedCampaign(accountId, "camp_a", { name: "A" });
+    const rows = insightRows([campanha], ["2026-06-01"]);
+    await db.prisma.dailyInsight.createMany({ data: rows });
+
+    const [serie] = await getCampaignDailySeries(accountId, "2026-06-01", "2026-06-01");
+
+    expect(totalsOf(serie.days[0])).toEqual(sumTotals(rows));
+  });
+
+  // O zero-fill preenche os dias de dentro do periodo; nao inventa campanha que
+  // nao rodou nele. Quem quer o catalogo inteiro da conta usa getCampaignTable.
+  it("deixa de fora a campanha sem insight no periodo", async () => {
+    const accountId = await seedAccount();
+    const campanha = await seedCampaign(accountId, "camp_a", { name: "A" });
+    await seedCampaign(accountId, "camp_b", { name: "Sem dado" });
+    await db.prisma.dailyInsight.createMany({
+      data: insightRows([campanha], ["2026-06-01"]),
+    });
+
+    const series = await getCampaignDailySeries(accountId, "2026-06-01", "2026-06-01");
+
+    expect(series.map((serie) => serie.name)).toEqual(["A"]);
+  });
+
+  it("nao mistura campanha de outra conta", async () => {
+    const minhaConta = await seedAccount();
+    const outraConta = await seedAccount();
+    const minha = await seedCampaign(minhaConta, "camp_a", { name: "Minha" });
+    const alheia = await seedCampaign(outraConta, "camp_b", { name: "Alheia" });
+    await db.prisma.dailyInsight.createMany({
+      data: insightRows([minha, alheia], ["2026-06-01"]),
+    });
+
+    const series = await getCampaignDailySeries(minhaConta, "2026-06-01", "2026-06-01");
+
+    expect(series.map((serie) => serie.name)).toEqual(["Minha"]);
+  });
+
+  it("devolve vazio em periodo sem insight nenhum", async () => {
+    const accountId = await seedAccount();
+    await seedCampaign(accountId, "camp_a");
+
+    expect(await getCampaignDailySeries(accountId, "2026-06-01", "2026-06-03")).toEqual([]);
+  });
+
+  it("derruba com periodo mal formado", async () => {
+    const accountId = await seedAccount();
+    await expect(getCampaignDailySeries(accountId, "2026-06-32", "2026-06-03")).rejects.toThrow(
+      RangeError,
+    );
   });
 });

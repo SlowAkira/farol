@@ -58,6 +58,33 @@ export function frequency(impressions: number, reach: number): number | null {
   return safeDivide(impressions, reach);
 }
 
+const ZERO_TOTALS: MetricTotals = {
+  impressions: 0,
+  clicks: 0,
+  spendCents: 0,
+  conversions: 0,
+  conversionValueCents: 0,
+  reach: 0,
+};
+
+// Soma de totais, e nunca de derivadas: media de CPA diario nao e o CPA do
+// periodo. Quem precisa da metrica de uma janela soma os totais aqui e chama
+// computeMetrics uma vez no fim -- e por isso que somar mora junto do calculo,
+// e nao no chamador que montou a janela.
+export function sumTotals(rows: readonly MetricTotals[]): MetricTotals {
+  return rows.reduce<MetricTotals>(
+    (acumulado, row) => ({
+      impressions: acumulado.impressions + row.impressions,
+      clicks: acumulado.clicks + row.clicks,
+      spendCents: acumulado.spendCents + row.spendCents,
+      conversions: acumulado.conversions + row.conversions,
+      conversionValueCents: acumulado.conversionValueCents + row.conversionValueCents,
+      reach: acumulado.reach + row.reach,
+    }),
+    ZERO_TOTALS,
+  );
+}
+
 export function computeMetrics(totals: MetricTotals): Metrics {
   return {
     ctrPercent: ctr(totals.clicks, totals.impressions),

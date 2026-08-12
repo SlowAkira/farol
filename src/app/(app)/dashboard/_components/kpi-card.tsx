@@ -6,7 +6,7 @@ import type { MetricTotals } from "@/lib/metrics/calc";
 import type { MetricDefinition } from "@/lib/metrics/catalog";
 import type { MetricComparison } from "@/lib/metrics/compare";
 import { DeltaBadge } from "./delta-badge";
-import { Sparkline } from "./sparkline";
+import { Sparkline } from "@/components/sparkline";
 
 export function KpiCard({
   definition,
