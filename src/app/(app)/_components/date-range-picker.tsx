@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -27,10 +27,21 @@ function toIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+// Alerta nao tem periodo: o feed mostra o que disparou, cada cartao carrega a
+// janela da propria regra, e o preview de backtest e sempre 90 dias. Um seletor
+// que nao muda nada do que esta na tela e pior que nenhum -- quem clica conclui
+// que a tela esta quebrada, e nao que o controle nao se aplica ali.
+const ROTAS_SEM_PERIODO = ["/alerts"];
+
 export function DateRangePicker({ accounts }: { accounts: readonly AccountOption[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  if (ROTAS_SEM_PERIODO.some((rota) => pathname === rota || pathname.startsWith(`${rota}/`))) {
+    return null;
+  }
 
   // Resolve a conta pelo mesmo caminho que a pagina do servidor resolve, e a
   // partir da mesma lista na mesma ordem: os presets tem que terminar onde o

@@ -62,13 +62,22 @@ function formatterFor(timeZone: string): Intl.DateTimeFormat {
   return formatter;
 }
 
-// "Hoje" precisa ser o hoje da conta de anuncios, nao o do servidor: uma conta em
-// America/Sao_Paulo passa 3 horas do dia num dia diferente do UTC, e a janela
-// sairia deslocada justamente nas execucoes da madrugada.
-export function todayIn(timeZone: string, now: Date = new Date()): string {
-  const parts = formatterFor(timeZone).formatToParts(now);
+// Em que dia de calendario um instante caiu, no fuso da conta de anuncios. E a
+// ponte entre os dois tipos de tempo do sistema: o DateTime de quando algo
+// aconteceu (Alert.triggeredAt) e a data YYYY-MM-DD com que o painel agrupa.
+// Fazer essa conversao no componente traria de volta o fuso da maquina que o
+// formato de data existe para evitar.
+export function isoDateIn(timeZone: string, instant: Date): string {
+  const parts = formatterFor(timeZone).formatToParts(instant);
   const get = (type: Intl.DateTimeFormatPartTypes): string =>
     parts.find((part) => part.type === type)?.value ?? "";
 
   return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+// "Hoje" precisa ser o hoje da conta de anuncios, nao o do servidor: uma conta em
+// America/Sao_Paulo passa 3 horas do dia num dia diferente do UTC, e a janela
+// sairia deslocada justamente nas execucoes da madrugada.
+export function todayIn(timeZone: string, now: Date = new Date()): string {
+  return isoDateIn(timeZone, now);
 }

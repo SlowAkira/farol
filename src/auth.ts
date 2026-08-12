@@ -57,6 +57,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
+      // `sub` e onde o Auth.js guarda o id do usuario no JWT. Copiado para a
+      // sessao explicitamente porque e dele que as server actions de escrita
+      // dependem para provar posse -- deixar isso a cargo do padrao faria a
+      // guarda de posse depender de detalhe interno da biblioteca.
+      session.user.id = token.sub ?? "";
       session.user.isDemo = token.isDemo ?? false;
       return session;
     },

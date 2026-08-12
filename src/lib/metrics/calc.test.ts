@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { computeMetrics, cpa, cpc, cpm, ctr, frequency, roas, type MetricTotals } from "./calc";
+import {
+  computeMetrics,
+  cpa,
+  cpc,
+  cpm,
+  ctr,
+  frequency,
+  roas,
+  sumTotals,
+  type MetricTotals,
+} from "./calc";
 
 function totals(overrides: Partial<MetricTotals> = {}): MetricTotals {
   return {
@@ -126,5 +136,39 @@ describe("computeMetrics", () => {
     expect(result.frequencyRatio).toBeNull();
     expect(result.ctrPercent).toBe(2);
     expect(result.roasRatio).toBe(8);
+  });
+});
+
+describe("sumTotals", () => {
+  it("soma campo a campo", () => {
+    expect(sumTotals([totals(), totals()])).toEqual({
+      impressions: 20_000,
+      clicks: 400,
+      spendCents: 100_000,
+      conversions: 40,
+      conversionValueCents: 800_000,
+      reach: 16_000,
+    });
+  });
+
+  it("devolve tudo zerado sem linha nenhuma", () => {
+    expect(sumTotals([])).toEqual({
+      impressions: 0,
+      clicks: 0,
+      spendCents: 0,
+      conversions: 0,
+      conversionValueCents: 0,
+      reach: 0,
+    });
+  });
+
+  // Somar totais e depois derivar nao e a mesma conta que derivar dia a dia e
+  // tirar a media: o CPA de dois dias e o gasto somado sobre as conversoes
+  // somadas, e e por isso que somar mora junto do calculo.
+  it("alimenta a derivada com o total, e nao com a media das derivadas", () => {
+    const caro = totals({ spendCents: 90_000, conversions: 10 });
+    const barato = totals({ spendCents: 10_000, conversions: 90 });
+
+    expect(computeMetrics(sumTotals([caro, barato])).cpaCents).toBe(1_000);
   });
 });

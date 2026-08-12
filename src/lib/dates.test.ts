@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysBetween, isIsoDate, todayIn } from "./dates";
+import { addDays, daysBetween, isIsoDate, isoDateIn, todayIn } from "./dates";
 
 describe("isIsoDate", () => {
   it("aceita data real e recusa data que so parece valida", () => {
@@ -73,5 +73,16 @@ describe("todayIn", () => {
 
   it("derruba com fuso inexistente", () => {
     expect(() => todayIn("Marte/Olympus")).toThrow(RangeError);
+  });
+});
+
+describe("isoDateIn", () => {
+  // Mesma conversao de todayIn, com um instante do passado: e o que traduz o
+  // triggeredAt de um alerta no dia de calendario com que o feed agrupa.
+  it("devolve o dia de calendario do instante no fuso pedido", () => {
+    const noite = new Date("2026-08-06T01:00:00Z");
+
+    expect(isoDateIn("UTC", noite)).toBe("2026-08-06");
+    expect(isoDateIn("America/Sao_Paulo", noite)).toBe("2026-08-05");
   });
 });

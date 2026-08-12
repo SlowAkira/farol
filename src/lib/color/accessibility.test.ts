@@ -179,6 +179,24 @@ const NAO_TEXTO: readonly Par[] = [
     minimo: AA_NON_TEXT,
     onde: "anel de foco na navegacao",
   },
+  // Campo de fundo transparente nao tem nada alem da borda dizendo onde ele
+  // comeca, entao a borda e "informacao necessaria para identificar um
+  // componente" da 1.4.11 -- diferente de --border, que so separa areas. As tres
+  // superficies entram porque o formulario de regra fica no cartao, o seletor de
+  // periodo fica no fundo da pagina e o de metrica abre dentro do popover.
+  { frente: "--input", fundo: "--card", minimo: AA_NON_TEXT, onde: "borda de campo no cartao" },
+  {
+    frente: "--input",
+    fundo: "--background",
+    minimo: AA_NON_TEXT,
+    onde: "borda de campo na pagina",
+  },
+  {
+    frente: "--input",
+    fundo: "--popover",
+    minimo: AA_NON_TEXT,
+    onde: "borda de campo no popover",
+  },
 ];
 
 function tokensDeCor(tema: ThemeName): string[] {

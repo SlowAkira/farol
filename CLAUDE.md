@@ -82,8 +82,9 @@ alertas automáticos de anomalia.
   ativa, disco `/10` do ícone de alerta). Token novo que reprova se ajusta; o
   teste não.
 - UI não tem teste unitário; um único fluxo crítico coberto por Playwright.
-- `npm run shots` fotografa landing, dashboard, campanhas e alertas nos dois
-  temas em 375px, 768px e 1440px, e grava em `.screenshots/` (fora do git).
+- `npm run shots` fotografa landing, dashboard, campanhas, alertas, regras de
+  alerta e a tela de regra nova nos dois temas em 375px, 768px e 1440px, e grava
+  em `.screenshots/` (fora do git).
   Precisa do app de pé; `SHOTS_BASE_URL` aponta para outra origem.
 
 ## Fluxo de trabalho

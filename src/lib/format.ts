@@ -197,6 +197,28 @@ export function formatMetric(
   }
 }
 
+// O mesmo numero, escrito no meio de uma frase. Nao e o `display` de
+// formatMetric (que abrevia: "R$ 12,3 mil" no meio de um titulo soa como
+// estimativa) nem o `title` dele (que leva razao e percentual a quatro casas,
+// precisao de comparacao que em prosa vira ruido). Duas casas em tudo, sem
+// abreviar: e assim que um gestor de trafego escreveria o valor.
+export function formatMetricInline(
+  value: number,
+  unit: MetricUnit,
+  currency: string,
+): string {
+  switch (unit) {
+    case "currency":
+      return formatCurrency(value, currency);
+    case "count":
+      return formatCount(value);
+    case "ratio":
+      return formatRatio(value, 2);
+    case "percent":
+      return formatPercent(value, 2);
+  }
+}
+
 export function formatDelta(deltaPercent: number | null): FormattedMetric {
   if (deltaPercent === null) {
     return { display: EMPTY_DISPLAY, title: "Sem período anterior comparável" };

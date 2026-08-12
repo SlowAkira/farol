@@ -22,7 +22,14 @@ export async function listSyncableAccounts(): Promise<SyncableAccount[]> {
   });
 }
 
-export type DashboardAccount = SyncableAccount & { readonly status: AccountStatus };
+// O fuso vem junto porque quem mostra o dado precisa dele: o feed de alertas
+// agrupa por dia, e "dia" de uma conta de anuncios e o dia no fuso dela, nao no
+// do servidor. Nao esta em SyncableAccount porque a ingestao le o fuso do
+// provider, e nao do banco.
+export type DashboardAccount = SyncableAccount & {
+  readonly status: AccountStatus;
+  readonly timezone: string;
+};
 
 // "O que da para sincronizar" e "o que da para mostrar" sao perguntas
 // diferentes, e por isso duas funcoes. A conta desconectada nao entra no sync,
@@ -30,7 +37,14 @@ export type DashboardAccount = SyncableAccount & { readonly status: AccountStatu
 // lista sem explicacao, e o usuario fica sem saber que basta reconectar.
 export async function listDashboardAccounts(): Promise<DashboardAccount[]> {
   const accounts = await getPrisma().adAccount.findMany({
-    select: { id: true, name: true, platform: true, currency: true, status: true },
+    select: {
+      id: true,
+      name: true,
+      platform: true,
+      currency: true,
+      status: true,
+      timezone: true,
+    },
     orderBy: { createdAt: "asc" },
   });
 

@@ -70,7 +70,10 @@ export function Sidebar({ email, isDemo }: { email: string | null; isDemo: boole
       <span className="text-lead font-semibold md:mb-8">Farol</span>
       <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto md:flex-none md:flex-col md:overflow-visible">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+          // Rota filha mantem o pai aceso: /alerts/rules e /campaigns/<id> sao a
+          // mesma secao, e apagar o item ali faria a navegacao dizer que a pessoa
+          // saiu do painel.
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <Link
