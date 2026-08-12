@@ -1,7 +1,9 @@
 import { AccountStatus } from "@/generated/prisma/enums";
 import type { Prisma } from "@/generated/prisma/client";
+import { evaluateRules } from "@/lib/alerts/engine";
 import { getPrisma } from "@/lib/db/client";
 import { addDays, todayIn } from "@/lib/dates";
+import { logJson } from "@/lib/log";
 import {
   getProvider,
   ProviderConfigError,
@@ -23,6 +25,8 @@ export type SyncSummary = {
   readonly insightsInserted: number;
   readonly insightsUpdated: number;
   readonly insightsSkipped: number;
+  readonly alertsOpened: number;
+  readonly alertsResolved: number;
   readonly since: string;
   readonly until: string;
   readonly durationMs: number;
@@ -55,6 +59,21 @@ function failure(adAccountId: string, code: SyncErrorCode, message: string): Syn
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+// A ingestao ja esta commitada quando isto roda: alerta que falha nao desfaz
+// insight gravado, e devolver erro daqui faria o cron reportar como quebrada uma
+// conta que sincronizou inteira. O defeito sai no log e a sincronizacao segue.
+async function evaluateAlerts(
+  adAccountId: string,
+  asOf: string,
+): Promise<{ opened: number; resolved: number }> {
+  try {
+    return await evaluateRules(adAccountId, asOf);
+  } catch (error) {
+    logJson("alerts.error", { adAccountId, asOf, message: messageOf(error) });
+    return { opened: 0, resolved: 0 };
+  }
 }
 
 type Window = { readonly since: string; readonly until: string };
@@ -299,6 +318,11 @@ export async function syncAccount(
     { timeout: 15_000, maxWait: 15_000 },
   );
 
+  // Fora da transacao de ingestao de proposito: as regras precisam ler os
+  // insights ja commitados, e prender a avaliacao ao mesmo `tx` gastaria o
+  // orcamento de 15s da transacao numa leitura que nao escreve insight nenhum.
+  const alerts = await evaluateAlerts(adAccountId, window.until);
+
   return {
     ok: true,
     summary: {
@@ -306,6 +330,8 @@ export async function syncAccount(
       insightsInserted: counts.inserted,
       insightsUpdated: counts.updated,
       insightsSkipped: counts.skipped,
+      alertsOpened: alerts.opened,
+      alertsResolved: alerts.resolved,
       since: window.since,
       until: window.until,
       durationMs: Date.now() - startedAt,

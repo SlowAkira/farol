@@ -46,11 +46,28 @@ enum AlertMetric {
   CTR
   CPM
   SPEND
+  FREQUENCY
 }
 
 enum AlertComparison {
-  INCREASE_PCT
-  DECREASE_PCT
+  PCT_CHANGE
+  ABSOLUTE_THRESHOLD
+}
+
+enum AlertDirection {
+  ABOVE
+  BELOW
+}
+
+enum AlertScope {
+  ACCOUNT
+  CAMPAIGN
+}
+
+enum AlertStatus {
+  OPEN
+  RESOLVED
+  MUTED
 }
 
 model User {
@@ -139,35 +156,65 @@ model Campaign {
   dailyBudgetCents Int?
   createdAt        DateTime          @default(now())
 
-  adAccount  AdAccount      @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
-  insights   DailyInsight[]
-  alertRules AlertRule[]
+  adAccount AdAccount      @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+  insights  DailyInsight[]
+  alerts    Alert[]
 
   @@unique([adAccountId, externalId])
 }
 
-// Regra de alerta: compara a media de `metric` nos ultimos `windowDays` contra
-// a mesma janela imediatamente anterior. So o schema e o seed (tres regras,
-// prisma/seed.ts) fazem parte desta fase -- o motor que le DailyInsight e
-// decide se a regra disparou fica para quando /alerts sair de "Em breve".
+// Regra de alerta, avaliada por src/lib/alerts/engine.ts ao final de cada
+// sincronizacao. `threshold` e sempre magnitude positiva na unidade que o mapa
+// de src/lib/alerts/metrics.ts define para a metrica -- ler o numero sem saber
+// a metrica e a comparacao e ambiguo, e aquele mapa e a unica fonte da verdade.
+// Quem da sinal a magnitude e `direction`: em ABSOLUTE_THRESHOLD, ABOVE dispara
+// com o valor acima do limiar; em PCT_CHANGE, ABOVE e "subiu mais que X%" e
+// BELOW e "caiu mais que X%".
 model AlertRule {
-  id           String          @id @default(cuid())
-  userId       String
-  adAccountId  String
-  // Nulo = regra da conta inteira; preenchido = regra de uma campanha so.
-  campaignId   String?
-  name         String
-  metric       AlertMetric
-  comparison   AlertComparison
-  thresholdPct Int
-  windowDays   Int             @default(7)
-  createdAt    DateTime        @default(now())
+  id          String          @id @default(cuid())
+  userId      String
+  adAccountId String
+  name        String
+  metric      AlertMetric
+  comparison  AlertComparison
+  direction   AlertDirection
+  // ACCOUNT avalia a conta inteira e abre um alerta so; CAMPAIGN avalia cada
+  // campanha da conta em separado e abre um alerta por campanha infratora.
+  scope       AlertScope
+  threshold   Int
+  windowDays  Int             @default(7)
+  enabled     Boolean         @default(true)
+  createdAt   DateTime        @default(now())
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   adAccount AdAccount @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
-  campaign  Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  alerts    Alert[]
 
   @@unique([userId, name])
+  @@index([adAccountId, enabled])
+}
+
+// Disparo de uma regra. `fingerprint` e o hash de (ruleId, campaignId, direcao)
+// e e o que impede a mesma condicao virar alerta novo a cada sincronizacao:
+// enquanto existir um OPEN (ou MUTED) com o mesmo fingerprint, nao se abre
+// outro. `context` guarda os numeros que motivaram o disparo -- periodo, valor,
+// valor anterior e os totais das duas janelas -- para a /alerts poder explicar
+// o alerta em portugues sem reconsultar o DailyInsight.
+model Alert {
+  id          String      @id @default(cuid())
+  ruleId      String
+  campaignId  String?
+  triggeredAt DateTime    @default(now())
+  fingerprint String
+  status      AlertStatus @default(OPEN)
+  context     Json
+  resolvedAt  DateTime?
+
+  rule     AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([fingerprint, status])
+  @@index([ruleId, status])
 }
 
 model DailyInsight {

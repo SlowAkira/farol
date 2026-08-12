@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AccountStatus,
+  AlertComparison,
+  AlertDirection,
+  AlertMetric,
+  AlertScope,
   CampaignObjective,
   CampaignStatus,
   Platform,
@@ -259,6 +263,43 @@ describe("syncAccount: idempotencia", () => {
     expect(after).toHaveLength(insights.length);
     expect(after.map((row) => row.id)).toEqual(before.map((row) => row.id));
     expect(await db.prisma.campaign.count()).toBe(CAMPAIGNS.length);
+  });
+
+  // O motor de alertas roda ao final de toda sincronizacao bem sucedida, entao
+  // ele entra na mesma promessa de idempotencia da ingestao: rodar de novo sobre
+  // o mesmo periodo nao pode render um alerta a mais.
+  it("avalia as regras uma vez e nao duplica o alerta na execucao seguinte", async () => {
+    const adAccountId = await seedAccount();
+    const { userId } = await db.prisma.adAccount.findUniqueOrThrow({ where: { id: adAccountId } });
+    const dates = windowDates(3);
+    const insights = CAMPAIGNS.flatMap((campaign) =>
+      dates.map((date) => insight(campaign.externalId, date)),
+    );
+    useProvider({ insights });
+
+    // Seis linhas de 12 conversoes e R$ 450,00: CPA de R$ 37,50 na janela, acima
+    // do limiar de R$ 30,00 e com volume de sobra para o piso de 30 conversoes.
+    await db.prisma.alertRule.create({
+      data: {
+        userId,
+        adAccountId,
+        name: "CPA acima de R$ 30",
+        metric: AlertMetric.CPA,
+        comparison: AlertComparison.ABSOLUTE_THRESHOLD,
+        direction: AlertDirection.ABOVE,
+        scope: AlertScope.ACCOUNT,
+        threshold: 3_000,
+        windowDays: dates.length,
+      },
+    });
+
+    const first = await syncAccount(adAccountId);
+    const second = await syncAccount(adAccountId);
+
+    expect(first.ok && first.summary).toMatchObject({ alertsOpened: 1, alertsResolved: 0 });
+    expect(second.ok && second.summary).toMatchObject({ alertsOpened: 0, alertsResolved: 0 });
+    expect(await db.prisma.alert.count()).toBe(1);
+    expect(await db.prisma.dailyInsight.count()).toBe(insights.length);
   });
 
   it("nao duplica campanha entre execucoes", async () => {

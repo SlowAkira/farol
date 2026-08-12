@@ -1,7 +1,12 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { AlertComparison, AlertMetric } from "../src/generated/prisma/enums";
+import {
+  AlertComparison,
+  AlertDirection,
+  AlertMetric,
+  AlertScope,
+} from "../src/generated/prisma/enums";
 import { DEMO_USER_EMAIL } from "../src/lib/auth/env";
 import { DEFAULT_END_DATE, generateAccount } from "../src/lib/mock/generator";
 
@@ -56,47 +61,58 @@ async function main(): Promise<void> {
     // constraint, sem precisar de 480 upserts individuais.
     await prisma.dailyInsight.createMany({ data: insights, skipDuplicates: true });
 
-    const leadsCampaign = campaigns.find((c) => c.externalId === "camp_leads");
-    const blackFridayCampaign = campaigns.find((c) => c.externalId === "camp_bf_conv");
-    if (!leadsCampaign || !blackFridayCampaign) {
-      throw new Error("generateAccount nao devolveu as campanhas esperadas pelo seed.");
-    }
-
     const alertRules = [
       {
         // camp_leads degrada o CPA em 1.6x a partir do dia 95 (ver PROFILES em
         // src/lib/mock/generator.ts). Janela de 30 dias contra os 30 dias
-        // anteriores pega ~25 dias degradados contra 30 limpos: media sobe
-        // uns 50%, bem acima do limiar de 30% -- e a regra que "dispara".
-        name: "Custo por lead subiu no mês",
+        // anteriores pega ~25 dias degradados contra 30 limpos: o CPA sobe uns
+        // 50%, bem acima do limiar de 30% -- e a regra que "dispara".
+        name: "Custo por conversão subiu no mês",
         userId: demoUser.id,
         adAccountId: accountId,
-        campaignId: leadsCampaign.id,
         metric: AlertMetric.CPA,
-        comparison: AlertComparison.INCREASE_PCT,
-        thresholdPct: 30,
+        comparison: AlertComparison.PCT_CHANGE,
+        direction: AlertDirection.ABOVE,
+        scope: AlertScope.CAMPAIGN,
+        threshold: 30 * 100,
         windowDays: 30,
       },
       {
-        // Conta inteira (campaignId nulo). Nada no gerador cria essa queda:
-        // fica configurada, mas nao dispara com o dado sintetico atual.
+        // Conta inteira. Nada no gerador cria essa queda: fica configurada, mas
+        // nao dispara com o dado sintetico atual.
         name: "ROAS da conta caiu na semana",
         userId: demoUser.id,
         adAccountId: accountId,
-        campaignId: null,
         metric: AlertMetric.ROAS,
-        comparison: AlertComparison.DECREASE_PCT,
-        thresholdPct: 20,
+        comparison: AlertComparison.PCT_CHANGE,
+        direction: AlertDirection.BELOW,
+        scope: AlertScope.ACCOUNT,
+        threshold: 20 * 100,
         windowDays: 7,
       },
       {
-        name: "CTR da campanha de Black Friday caiu",
+        name: "CTR das campanhas caiu na semana",
         userId: demoUser.id,
         adAccountId: accountId,
-        campaignId: blackFridayCampaign.id,
         metric: AlertMetric.CTR,
-        comparison: AlertComparison.DECREASE_PCT,
-        thresholdPct: 15,
+        comparison: AlertComparison.PCT_CHANGE,
+        direction: AlertDirection.BELOW,
+        scope: AlertScope.CAMPAIGN,
+        threshold: 15 * 100,
+        windowDays: 7,
+      },
+      {
+        // A unica em ABSOLUTE_THRESHOLD, para o dado de demonstracao exercitar
+        // os dois eixos de comparacao. Limiar em centavos, como todo dinheiro
+        // no projeto: R$ 60,00 de custo por conversao.
+        name: "Custo por conversão acima de R$ 60",
+        userId: demoUser.id,
+        adAccountId: accountId,
+        metric: AlertMetric.CPA,
+        comparison: AlertComparison.ABSOLUTE_THRESHOLD,
+        direction: AlertDirection.ABOVE,
+        scope: AlertScope.CAMPAIGN,
+        threshold: 6_000,
         windowDays: 7,
       },
     ];
