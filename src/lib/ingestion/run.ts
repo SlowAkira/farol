@@ -101,6 +101,8 @@ function logOutcome(outcome: AccountSyncOutcome, trigger: SyncTrigger): void {
     insightsInserted: outcome.summary.insightsInserted,
     insightsUpdated: outcome.summary.insightsUpdated,
     insightsSkipped: outcome.summary.insightsSkipped,
+    alertsOpened: outcome.summary.alertsOpened,
+    alertsResolved: outcome.summary.alertsResolved,
     since: outcome.summary.since,
     until: outcome.summary.until,
   });

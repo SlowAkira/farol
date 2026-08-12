@@ -12,7 +12,7 @@ const MIGRATIONS_DIR = path.join(process.cwd(), "prisma", "migrations");
 // proposital: tabela nova que ninguem lembrar de adicionar aqui vai vazar estado
 // entre testes, e e melhor descobrir isso lendo esta linha do que caçando um
 // teste que so falha quando roda depois de outro.
-const TABLES = ["DailyInsight", "Campaign", "AdAccount", "User"] as const;
+const TABLES = ["Alert", "AlertRule", "DailyInsight", "Campaign", "AdAccount", "User"] as const;
 
 export function testConnectionString(): string {
   const url = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;

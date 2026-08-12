@@ -49,10 +49,15 @@ npm run db:reset     # zera o banco local e roda o seed de novo
 
 `prisma/seed.ts` cria o usuário demo, a conta sintética completa (4
 campanhas, 120 dias de insights, via `generateAccount` de
-`src/lib/mock/generator.ts`) e três regras de alerta pré-configuradas — uma
-delas (custo por lead) dispara de verdade contra o dado sintético, porque o
-gerador já degrada o CPA da campanha de leads a partir do dia 95. Todo o seed
-usa upsert/`skipDuplicates`, então rodar duas vezes não duplica nada.
+`src/lib/mock/generator.ts`) e quatro regras de alerta pré-configuradas — uma
+delas (custo por conversão no mês) dispara de verdade contra o dado sintético,
+porque o gerador já degrada o CPA da campanha de leads a partir do dia 95. Todo
+o seed usa upsert/`skipDuplicates`, então rodar duas vezes não duplica nada.
+
+Os alertas em si só aparecem depois de uma sincronização: `evaluateRules`
+(`src/lib/alerts/engine.ts`) roda ao final de cada `syncAccount` bem sucedida e
+é ela que grava a tabela `Alert`. Depois do seed, rode
+`npm run sync -- <adAccountId>` para ver os disparos.
 
 Para rodar o seed contra o banco de produção no Neon (ex.: para a conta demo
 existir antes do primeiro deploy), aponte `DIRECT_URL` para a URL direta

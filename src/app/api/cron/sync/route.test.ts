@@ -39,6 +39,8 @@ function summary(): SyncSummary {
     insightsInserted: 56,
     insightsUpdated: 0,
     insightsSkipped: 0,
+    alertsOpened: 0,
+    alertsResolved: 0,
     since: "2026-07-09",
     until: "2026-08-05",
     durationMs: 12,
